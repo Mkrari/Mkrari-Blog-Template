@@ -1,0 +1,633 @@
+---
+import { Icon } from "astro-icon/components";
+import WidgetLayout from "./WidgetLayout.astro";
+
+interface Props {
+	class?: string;
+	style?: string;
+}
+
+const { class: className, style } = Astro.props;
+---
+
+<WidgetLayout
+	id="calendar-widget"
+	class={`hidden md:block contribution-widget ${className || ""}`}
+	style={style}
+>
+	<div class="contribution-header">
+		<div class="contribution-heading">
+			<Icon name="material-symbols:calendar-month-outline-rounded" />
+			<div>
+				<small>CONTRIBUTIONS</small>
+				<strong><span id="contribution-year"></span> 年创作记录</strong>
+			</div>
+		</div>
+
+		<div class="contribution-navigation">
+			<button
+				id="contribution-current-year"
+				type="button"
+				class="contribution-current-year"
+			>
+				回到今年
+			</button>
+			<button
+				id="contribution-prev-year"
+				type="button"
+				aria-label="查看上一年"
+			>
+				<Icon name="material-symbols:chevron-left-rounded" />
+			</button>
+			<button
+				id="contribution-next-year"
+				type="button"
+				aria-label="查看下一年"
+			>
+				<Icon name="material-symbols:chevron-right-rounded" />
+			</button>
+		</div>
+	</div>
+
+	<div class="contribution-summary">
+		<strong id="contribution-count">0</strong>
+		<span>篇文章贡献</span>
+		<i aria-hidden="true"></i>
+		<span id="contribution-status">点击绿色格子查看文章</span>
+	</div>
+
+	<div class="contribution-chart">
+		<div class="contribution-weekdays" aria-hidden="true">
+			<span>一</span>
+			<span></span>
+			<span>三</span>
+			<span></span>
+			<span>五</span>
+			<span></span>
+			<span>日</span>
+		</div>
+		<div class="contribution-graph">
+			<div id="contribution-months" class="contribution-months"></div>
+			<div
+				id="contribution-grid"
+				class="contribution-grid"
+				role="grid"
+				aria-label="全年文章贡献图"
+			></div>
+		</div>
+	</div>
+
+	<div class="contribution-footer">
+		<span>文章贡献强度</span>
+		<div class="contribution-legend" aria-label="贡献强度：少到多">
+			<em>少</em>
+			<i data-level="0"></i>
+			<i data-level="1"></i>
+			<i data-level="2"></i>
+			<i data-level="3"></i>
+			<i data-level="4"></i>
+			<em>多</em>
+		</div>
+	</div>
+
+	<div class="contribution-posts">
+		<div class="contribution-posts-heading">
+			<span id="contribution-posts-title">最近的创作</span>
+			<small id="contribution-posts-meta"></small>
+		</div>
+		<div id="contribution-posts-list" class="contribution-posts-list"></div>
+	</div>
+</WidgetLayout>
+
+<script>
+	type CalendarPost = {
+		id: string;
+		title: string;
+		date: string;
+	};
+
+	const chart = document.getElementById("calendar-widget");
+
+	if (chart && !chart.dataset.contributionReady) {
+		chart.dataset.contributionReady = "true";
+
+		const today = new Date();
+		const currentRealYear = today.getFullYear();
+		let currentYear = currentRealYear;
+		let selectedDate = "";
+		let allPosts: CalendarPost[] = [];
+		const postsByDate = new Map<string, CalendarPost[]>();
+
+		const dom = {
+			year: chart.querySelector<HTMLElement>("#contribution-year"),
+			count: chart.querySelector<HTMLElement>("#contribution-count"),
+			status: chart.querySelector<HTMLElement>("#contribution-status"),
+			months: chart.querySelector<HTMLElement>("#contribution-months"),
+			grid: chart.querySelector<HTMLElement>("#contribution-grid"),
+			prev: chart.querySelector<HTMLButtonElement>("#contribution-prev-year"),
+			next: chart.querySelector<HTMLButtonElement>("#contribution-next-year"),
+			current: chart.querySelector<HTMLButtonElement>(
+				"#contribution-current-year",
+			),
+			postsTitle: chart.querySelector<HTMLElement>(
+				"#contribution-posts-title",
+			),
+			postsMeta: chart.querySelector<HTMLElement>(
+				"#contribution-posts-meta",
+			),
+			postsList: chart.querySelector<HTMLElement>(
+				"#contribution-posts-list",
+			),
+		};
+
+		const dateKey = (date: Date) =>
+			`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+
+		const mondayIndex = (date: Date) => (date.getDay() + 6) % 7;
+
+		const daysBetween = (from: Date, to: Date) =>
+			Math.round((to.getTime() - from.getTime()) / 86_400_000);
+
+		function contributionLevel(count: number) {
+			return count > 0 ? 4 : 0;
+		}
+
+		function renderMonths(firstDay: Date, leadingDays: number) {
+			if (!dom.months) return;
+
+			dom.months.innerHTML = Array.from({ length: 12 }, (_, month) => {
+				const monthStart = new Date(currentYear, month, 1);
+				const offset = leadingDays + daysBetween(firstDay, monthStart);
+				const week = Math.floor(offset / 7) + 1;
+				return `<span style="grid-column:${week}">${month + 1}月</span>`;
+			}).join("");
+		}
+
+		function renderPosts(posts: CalendarPost[], selected = false) {
+			if (!dom.postsList || !dom.postsTitle || !dom.postsMeta) return;
+
+			if (selected) {
+				dom.postsTitle.textContent = "本格贡献文章";
+				dom.postsMeta.textContent = posts.length
+					? `${posts.length} 篇`
+					: "暂无文章";
+			} else {
+				dom.postsTitle.textContent = "最近的创作";
+				dom.postsMeta.textContent = posts.length ? `${currentYear} 年` : "";
+			}
+
+			if (posts.length === 0) {
+				dom.postsList.innerHTML =
+					'<p class="contribution-empty">这一格还没有留下创作记录。</p>';
+				return;
+			}
+
+			dom.postsList.innerHTML = posts
+				.slice(0, selected ? 8 : 3)
+				.map(
+					(post, index) => `
+						<a href="/posts/${post.id}/" class="contribution-post">
+							<span>${String(index + 1).padStart(2, "0")}</span>
+							<strong>${post.title}</strong>
+							<svg aria-hidden="true" viewBox="0 0 24 24">
+								<path fill="currentColor" d="m9.4 18.4-1.4-1.4 5-5-5-5 1.4-1.4 6.4 6.4z"/>
+							</svg>
+						</a>
+					`,
+				)
+				.join("");
+		}
+
+		function renderChart() {
+			if (!dom.grid || !dom.year || !dom.count || !dom.status) return;
+
+			dom.year.textContent = String(currentYear);
+			dom.current?.classList.toggle(
+				"is-visible",
+				currentYear !== currentRealYear,
+			);
+
+			const firstDay = new Date(currentYear, 0, 1);
+			const daysInYear =
+				(new Date(currentYear + 1, 0, 1).getTime() -
+					firstDay.getTime()) /
+				86_400_000;
+			const leadingDays = mondayIndex(firstDay);
+			const totalSlots = 53 * 7;
+			const cells: string[] = [];
+			let yearContributionCount = 0;
+
+			renderMonths(firstDay, leadingDays);
+
+			for (let slot = 0; slot < totalSlots; slot++) {
+				const dayOffset = slot - leadingDays;
+				if (dayOffset < 0 || dayOffset >= daysInYear) {
+					cells.push('<span class="contribution-cell is-empty"></span>');
+					continue;
+				}
+
+				const date = new Date(currentYear, 0, dayOffset + 1);
+				const key = dateKey(date);
+				const posts = postsByDate.get(key) || [];
+				const count = posts.length;
+				const level = contributionLevel(count);
+				const isSelected = key === selectedDate;
+				yearContributionCount += count;
+
+				cells.push(`
+					<button
+						type="button"
+						class="contribution-cell contribution-level-${level}${isSelected ? " is-selected" : ""}"
+						data-date="${key}"
+						data-count="${count}"
+						aria-label="${key}，${count} 篇文章"
+						aria-pressed="${isSelected}"
+						title="${key} · ${count ? `${count} 篇文章` : "暂无文章"}"
+					></button>
+				`);
+			}
+
+			dom.grid.innerHTML = cells.join("");
+			dom.count.textContent = String(yearContributionCount);
+
+			const yearlyPosts = allPosts
+				.filter((post) => post.date.startsWith(`${currentYear}-`))
+				.sort((a, b) => b.date.localeCompare(a.date));
+
+			if (selectedDate) {
+				const posts = postsByDate.get(selectedDate) || [];
+				dom.status.textContent = posts.length
+					? `已选中一个有 ${posts.length} 篇文章的贡献格`
+					: "已选中一个空白贡献格";
+				renderPosts(posts, true);
+			} else {
+				dom.status.textContent = "点击绿色格子查看文章";
+				renderPosts(yearlyPosts);
+			}
+		}
+
+		dom.grid?.addEventListener("click", (event) => {
+			const cell = (event.target as HTMLElement).closest<HTMLButtonElement>(
+				".contribution-cell[data-date]",
+			);
+			if (!cell) return;
+
+			const key = cell.dataset.date || "";
+			selectedDate = selectedDate === key ? "" : key;
+			renderChart();
+		});
+
+		dom.prev?.addEventListener("click", () => {
+			currentYear -= 1;
+			selectedDate = "";
+			renderChart();
+		});
+
+		dom.next?.addEventListener("click", () => {
+			currentYear += 1;
+			selectedDate = "";
+			renderChart();
+		});
+
+		dom.current?.addEventListener("click", () => {
+			currentYear = currentRealYear;
+			selectedDate = "";
+			renderChart();
+		});
+
+		renderChart();
+
+		fetch("/api/calendar-data.json")
+			.then((response) => response.json())
+			.then((data: CalendarPost[]) => {
+				if (!Array.isArray(data)) return;
+				allPosts = data;
+				for (const post of allPosts) {
+					const posts = postsByDate.get(post.date) || [];
+					posts.push(post);
+					postsByDate.set(post.date, posts);
+				}
+				renderChart();
+			})
+			.catch((error) => {
+				console.error("Failed to fetch contribution data:", error);
+			});
+	}
+</script>
+
+<style is:global>
+	.contribution-widget {
+		--contribution-green-1: #d9ffd8;
+		--contribution-green-2: #a7f3a1;
+		--contribution-green-3: #6ee777;
+		--contribution-green-4: #39d353;
+	}
+
+	.dark .contribution-widget {
+		--contribution-green-1: #bff7b9;
+		--contribution-green-2: #8bea87;
+		--contribution-green-3: #5ede6b;
+		--contribution-green-4: #39d353;
+	}
+
+	.contribution-header,
+	.contribution-heading,
+	.contribution-navigation,
+	.contribution-summary,
+	.contribution-footer,
+	.contribution-legend,
+	.contribution-posts-heading {
+		display: flex;
+		align-items: center;
+	}
+
+	.contribution-header {
+		justify-content: space-between;
+		gap: 1rem;
+		margin: 0.2rem 0 0.9rem;
+	}
+
+	.contribution-heading {
+		min-width: 0;
+		gap: 0.65rem;
+	}
+
+	.contribution-heading > svg {
+		flex: none;
+		color: var(--primary);
+		font-size: 1.45rem;
+	}
+
+	.contribution-heading > div {
+		display: grid;
+		gap: 0.08rem;
+	}
+
+	.contribution-heading small {
+		color: var(--primary);
+		font-size: 0.55rem;
+		font-weight: 900;
+		letter-spacing: 0.14em;
+	}
+
+	.contribution-heading strong {
+		color: var(--deep-text);
+		font-size: 1rem;
+		font-weight: 900;
+	}
+
+	.contribution-navigation {
+		flex: none;
+		gap: 0.3rem;
+	}
+
+	.contribution-navigation button {
+		display: grid;
+		width: 2rem;
+		height: 2rem;
+		place-items: center;
+		border-radius: 0.65rem;
+		color: var(--text-secondary);
+		transition: color 160ms ease, background 160ms ease;
+	}
+
+	.contribution-navigation button:hover {
+		background: var(--btn-plain-bg-hover);
+		color: var(--primary);
+	}
+
+	.contribution-navigation .contribution-current-year {
+		display: none;
+		width: auto;
+		padding-inline: 0.7rem;
+		font-size: 0.66rem;
+		font-weight: 800;
+	}
+
+	.contribution-navigation .contribution-current-year.is-visible {
+		display: grid;
+	}
+
+	.contribution-summary {
+		gap: 0.4rem;
+		margin-bottom: 0.65rem;
+		color: var(--text-secondary);
+		font-size: 0.7rem;
+	}
+
+	.contribution-summary strong {
+		color: var(--deep-text);
+		font-size: 1.15rem;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.contribution-summary i {
+		width: 1px;
+		height: 0.8rem;
+		margin-inline: 0.25rem;
+		background: var(--line-divider);
+	}
+
+	.contribution-chart {
+		display: grid;
+		grid-template-columns: 1.55rem minmax(0, 1fr);
+		gap: 0.4rem;
+	}
+
+	.contribution-weekdays {
+		display: grid;
+		grid-template-rows: repeat(7, minmax(0, 1fr));
+		gap: 3px;
+		padding-top: 1.3rem;
+		color: var(--text-secondary);
+		font-size: 0.55rem;
+	}
+
+	.contribution-weekdays span {
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
+	}
+
+	.contribution-graph {
+		min-width: 0;
+	}
+
+	.contribution-months {
+		display: grid;
+		height: 1.1rem;
+		grid-template-columns: repeat(53, minmax(0, 1fr));
+		color: var(--text-secondary);
+		font-size: 0.55rem;
+	}
+
+	.contribution-months span {
+		white-space: nowrap;
+	}
+
+	.contribution-grid {
+		display: grid;
+		grid-auto-flow: column;
+		grid-template-columns: repeat(53, minmax(0, 1fr));
+		grid-template-rows: repeat(7, minmax(0, 1fr));
+		gap: 3px;
+	}
+
+	.contribution-cell {
+		aspect-ratio: 1;
+		min-width: 0;
+		border: 1px solid color-mix(in oklch, var(--deep-text) 7%, transparent);
+		border-radius: 0.18rem;
+		background: color-mix(in oklch, var(--card-bg) 90%, var(--deep-text) 10%);
+		box-shadow: inset 0 1px 0 color-mix(in oklch, white 24%, transparent);
+		transition: box-shadow 150ms ease, transform 150ms ease;
+	}
+
+	.contribution-cell.is-empty {
+		border-color: transparent;
+		background: transparent;
+		box-shadow: none;
+	}
+
+	.contribution-cell.contribution-level-1,
+	.contribution-legend i[data-level="1"] {
+		background: var(--contribution-green-1);
+	}
+
+	.contribution-cell.contribution-level-2,
+	.contribution-legend i[data-level="2"] {
+		background: var(--contribution-green-2);
+	}
+
+	.contribution-cell.contribution-level-3,
+	.contribution-legend i[data-level="3"] {
+		background: var(--contribution-green-3);
+	}
+
+	.contribution-cell.contribution-level-4,
+	.contribution-legend i[data-level="4"] {
+		background: var(--contribution-green-4);
+	}
+
+	.contribution-cell.is-selected {
+		z-index: 2;
+		outline: 2px solid color-mix(in oklch, var(--primary) 78%, white);
+		outline-offset: 1px;
+		filter: saturate(1.12) brightness(0.9);
+		transform: scale(1.18);
+		box-shadow: 0 4px 12px color-mix(in oklch, var(--primary) 35%, transparent);
+	}
+
+	.contribution-footer {
+		justify-content: space-between;
+		gap: 1rem;
+		margin-top: 0.65rem;
+		color: var(--text-secondary);
+		font-size: 0.6rem;
+	}
+
+	.contribution-legend {
+		gap: 0.25rem;
+	}
+
+	.contribution-legend em {
+		font-style: normal;
+	}
+
+	.contribution-legend i {
+		width: 0.68rem;
+		height: 0.68rem;
+		border: 1px solid color-mix(in oklch, var(--deep-text) 7%, transparent);
+		border-radius: 0.16rem;
+		background: color-mix(in oklch, var(--card-bg) 90%, var(--deep-text) 10%);
+	}
+
+	.contribution-posts {
+		margin-top: 0.85rem;
+		padding-top: 0.75rem;
+		border-top: 1px solid var(--line-divider);
+	}
+
+	.contribution-posts-heading {
+		justify-content: space-between;
+		margin-bottom: 0.35rem;
+	}
+
+	.contribution-posts-heading span {
+		color: var(--deep-text);
+		font-size: 0.72rem;
+		font-weight: 900;
+	}
+
+	.contribution-posts-heading small {
+		color: var(--text-secondary);
+		font-size: 0.62rem;
+	}
+
+	.contribution-posts-list {
+		display: grid;
+		max-height: 8.5rem;
+		gap: 0.2rem;
+		overflow-y: auto;
+		scrollbar-color:
+			color-mix(in oklch, var(--primary) 48%, transparent)
+			transparent;
+		scrollbar-width: thin;
+	}
+
+	.contribution-post {
+		display: grid;
+		grid-template-columns: 1.5rem minmax(0, 1fr) auto;
+		align-items: center;
+		gap: 0.45rem;
+		padding: 0.45rem 0.5rem;
+		border-radius: 0.65rem;
+		transition: background 160ms ease, color 160ms ease;
+	}
+
+	.contribution-post:hover {
+		background: var(--btn-plain-bg-hover);
+		color: var(--primary);
+	}
+
+	.contribution-post > span {
+		color: var(--contribution-green-3);
+		font-size: 0.58rem;
+		font-weight: 900;
+	}
+
+	.contribution-post strong {
+		min-width: 0;
+		overflow: hidden;
+		color: var(--deep-text);
+		font-size: 0.7rem;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.contribution-post svg {
+		width: 1rem;
+		color: var(--primary);
+	}
+
+	.contribution-empty {
+		margin: 0;
+		padding: 0.65rem 0.5rem;
+		color: var(--text-secondary);
+		font-size: 0.7rem;
+	}
+
+	@media (max-width: 900px) {
+		.contribution-grid {
+			gap: 2px;
+		}
+
+		.contribution-weekdays {
+			gap: 2px;
+		}
+
+		.contribution-summary #contribution-status {
+			display: none;
+		}
+	}
+</style>

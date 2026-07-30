@@ -1,0 +1,630 @@
+---
+import { Icon } from "astro-icon/components";
+import PageComments from "@components/comment/PageComments.astro";
+import { siteConfig } from "../config";
+import { getShuffledFriendsList } from "../data/friends";
+import I18nKey from "../i18n/i18nKey";
+import { i18n } from "../i18n/translation";
+import MainGridLayout from "../layouts/MainGridLayout.astro";
+
+if (!siteConfig.featurePages.friends) return Astro.redirect("/404/");
+
+const friendsList = getShuffledFriendsList();
+const allTags = Array.from(new Set(friendsList.flatMap((item) => item.tags)));
+---
+
+<MainGridLayout
+	title={i18n(I18nKey.friends)}
+	description={i18n(I18nKey.friends)}
+	hideSidebars
+>
+	<script is:inline>
+		window.isFriendsPage = true;
+	</script>
+
+	<div class="friends-page">
+		<header class="friends-hero onload-animation">
+			<div class="friends-hero-copy">
+				<span>LINKS & CONNECTIONS</span>
+				<h1>友人帐</h1>
+				<p>在互联网的星图里，收藏一些值得反复拜访的小站。</p>
+			</div>
+			<div class="friends-constellation" aria-hidden="true">
+				<i></i><i></i><i></i><i></i>
+				<svg viewBox="0 0 260 120">
+					<path d="M18 78 L74 30 L132 72 L194 22 L241 76" />
+					<path d="M74 30 L106 104 L194 22" />
+				</svg>
+			</div>
+			<div class="friends-count">
+				<strong>{String(friendsList.length).padStart(2, "0")}</strong>
+				<span>CONNECTED SITES</span>
+			</div>
+		</header>
+
+		<section class="friends-toolbar onload-animation" aria-label="搜索和筛选友链">
+			<label class="friend-search-wrap">
+				<Icon name="material-symbols:search-rounded" />
+				<input
+					type="search"
+					id="friend-search"
+					placeholder={i18n(I18nKey.friendsSearchPlaceholder)}
+					autocomplete="off"
+				/>
+			</label>
+
+			<div class="filter-container">
+				<button class="filter-tag active" data-tag="all">
+					{i18n(I18nKey.friendsFilterAll)}
+					<span>{friendsList.length}</span>
+				</button>
+				{
+					allTags.map((tag) => (
+						<button class="filter-tag" data-tag={tag}>
+							{tag}
+							<span>{friendsList.filter((item) => item.tags.includes(tag)).length}</span>
+						</button>
+					))
+				}
+			</div>
+		</section>
+
+		<section id="friends-grid" class="friends-grid" aria-live="polite">
+			{
+				friendsList.map((item, index) => (
+					<article
+						class="friend-card group"
+						data-title={item.title.toLowerCase()}
+						data-desc={item.desc.toLowerCase()}
+						data-tags={item.tags.join(",")}
+						style={`--friend-index: ${String(index + 1).padStart(2, "0")}; --i: ${index};`}
+					>
+						<div class="friend-card-accent" />
+						<div class="friend-card-head">
+							<div class="friend-avatar">
+								<img src={item.imgurl} alt={item.title} loading="lazy" decoding="async" />
+							</div>
+							<div class="friend-identity">
+								<small>FRIEND {String(index + 1).padStart(2, "0")}</small>
+								<h2>{item.title}</h2>
+								<a href={item.siteurl} target="_blank" rel="noopener noreferrer">
+									{new URL(item.siteurl).hostname}
+								</a>
+							</div>
+							<Icon class="friend-external-icon" name="material-symbols:arrow-outward-rounded" />
+						</div>
+
+						<p class="friend-description">{item.desc}</p>
+
+						<div class="friend-card-foot">
+							<div class="friend-tags">
+								{item.tags.map((tag) => <span>#{tag}</span>)}
+							</div>
+							<div class="friend-actions">
+								<button
+									class="copy-link-btn"
+									data-url={item.siteurl}
+									title={i18n(I18nKey.friendsCopyLink)}
+									aria-label={`${i18n(I18nKey.friendsCopyLink)} ${item.title}`}
+								>
+									<Icon name="material-symbols:content-copy-outline-rounded" />
+								</button>
+								<a
+									href={item.siteurl}
+									target="_blank"
+									rel="noopener noreferrer"
+									aria-label={`${i18n(I18nKey.friendsVisit)} ${item.title}`}
+								>
+									{i18n(I18nKey.friendsVisit)}
+									<Icon name="material-symbols:arrow-forward-rounded" />
+								</a>
+							</div>
+						</div>
+					</article>
+				))
+			}
+		</section>
+
+		<div id="no-results" class="friends-empty hidden">
+			<Icon name="material-symbols:travel-explore-rounded" />
+			<h2>{i18n(I18nKey.friendsNoResults)}</h2>
+			<p>换个关键词，或浏览全部友链。</p>
+		</div>
+
+		<PageComments
+			path="/friends"
+			title="在友人帐里留言"
+			description="欢迎分享有趣的网站，也可以聊聊最近发现的好内容。"
+		/>
+
+		<div id="friends-copy-success-text" hidden>
+			{i18n(I18nKey.friendsCopySuccess)}
+		</div>
+	</div>
+
+	<script is:inline src="/js/friends-page-handler.js"></script>
+</MainGridLayout>
+
+<style is:global>
+	.friends-page {
+		--friends-border: color-mix(in oklch, var(--primary) 16%, transparent);
+		display: flex;
+		max-width: 1120px;
+		flex-direction: column;
+		gap: 1rem;
+		margin: 0 auto;
+		padding-bottom: 1rem;
+	}
+
+	.friends-hero,
+	.friends-toolbar,
+	.friend-card,
+	.friends-empty {
+		border: 1px solid var(--friends-border);
+		background: var(--card-bg);
+		box-shadow: 0 18px 46px rgba(48, 35, 88, 0.1);
+	}
+
+	.friends-hero {
+		position: relative;
+		display: flex;
+		min-height: 18rem;
+		align-items: center;
+		justify-content: space-between;
+		gap: 2rem;
+		padding: clamp(1.7rem, 4vw, 3.2rem);
+		overflow: hidden;
+		border-radius: calc(var(--radius-large) + 0.45rem);
+		background:
+			radial-gradient(circle at 76% 50%, color-mix(in oklch, var(--primary) 17%, transparent), transparent 35%),
+			var(--card-bg);
+	}
+
+	.friends-hero-copy {
+		position: relative;
+		z-index: 2;
+		max-width: 32rem;
+	}
+
+	.friends-hero-copy > span {
+		color: var(--primary);
+		font-size: 0.68rem;
+		font-weight: 900;
+		letter-spacing: 0.19em;
+	}
+
+	.friends-hero h1 {
+		margin: 0.25rem 0 0;
+		color: var(--deep-text);
+		font-size: clamp(2.6rem, 6vw, 5rem);
+		font-weight: 900;
+		letter-spacing: -0.065em;
+		line-height: 1;
+	}
+
+	.friends-hero p {
+		margin: 0.9rem 0 0;
+		color: color-mix(in oklch, var(--deep-text) 55%, transparent);
+		font-size: 0.9rem;
+		line-height: 1.6;
+	}
+
+	.friends-constellation {
+		position: absolute;
+		top: 50%;
+		right: 9%;
+		width: 17rem;
+		height: 8rem;
+		transform: translateY(-50%);
+		opacity: 0.7;
+	}
+
+	.friends-constellation svg {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+	}
+
+	.friends-constellation path {
+		fill: none;
+		stroke: color-mix(in oklch, var(--primary) 40%, transparent);
+		stroke-dasharray: 4 5;
+		stroke-width: 1;
+	}
+
+	.friends-constellation i {
+		position: absolute;
+		z-index: 2;
+		width: 0.55rem;
+		height: 0.55rem;
+		border: 2px solid var(--card-bg);
+		border-radius: 50%;
+		background: var(--primary);
+		box-shadow: 0 0 15px color-mix(in oklch, var(--primary) 55%, transparent);
+	}
+
+	.friends-constellation i:nth-child(1) { left: 5%; top: 60%; }
+	.friends-constellation i:nth-child(2) { left: 28%; top: 18%; }
+	.friends-constellation i:nth-child(3) { left: 50%; top: 56%; }
+	.friends-constellation i:nth-child(4) { left: 74%; top: 12%; }
+
+	.friends-count {
+		position: relative;
+		z-index: 2;
+		display: flex;
+		min-width: 7.5rem;
+		flex-direction: column;
+		align-items: flex-end;
+	}
+
+	.friends-count strong {
+		color: var(--primary);
+		font-size: 3rem;
+		line-height: 1;
+	}
+
+	.friends-count span {
+		margin-top: 0.35rem;
+		color: color-mix(in oklch, var(--deep-text) 40%, transparent);
+		font-size: 0.55rem;
+		font-weight: 900;
+		letter-spacing: 0.14em;
+	}
+
+	.friends-toolbar {
+		padding: 1rem;
+		border-radius: calc(var(--radius-large) + 0.2rem);
+	}
+
+	.friend-search-wrap {
+		display: flex;
+		align-items: center;
+		gap: 0.7rem;
+		height: 3.45rem;
+		padding: 0 0.85rem 0 1rem;
+		border: 1px solid color-mix(in oklch, var(--primary) 16%, transparent);
+		border-radius: 1rem;
+		background: color-mix(in oklch, var(--primary) 5%, var(--card-bg));
+		transition: border-color 160ms ease, box-shadow 160ms ease;
+	}
+
+	.friend-search-wrap:focus-within {
+		border-color: color-mix(in oklch, var(--primary) 58%, transparent);
+		box-shadow: 0 0 0 4px color-mix(in oklch, var(--primary) 10%, transparent);
+	}
+
+	.friend-search-wrap > svg {
+		flex: none;
+		color: var(--primary);
+		font-size: 1.4rem;
+	}
+
+	.friend-search-wrap input {
+		min-width: 0;
+		flex: 1;
+		border: 0;
+		outline: 0;
+		background: transparent;
+		color: var(--deep-text);
+		font-size: 0.85rem;
+	}
+
+	.filter-container {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		margin-top: 0.8rem;
+	}
+
+	.filter-tag {
+		display: flex;
+		align-items: center;
+		gap: 0.35rem;
+		padding: 0.48rem 0.72rem;
+		border: 1px solid color-mix(in oklch, var(--deep-text) 9%, transparent);
+		border-radius: 0.7rem;
+		background: color-mix(in oklch, var(--primary) 4%, var(--card-bg));
+		color: color-mix(in oklch, var(--deep-text) 62%, transparent);
+		font-size: 0.72rem;
+		font-weight: 800;
+		transition: transform 150ms ease, color 150ms ease, background 150ms ease;
+	}
+
+	.filter-tag span {
+		opacity: 0.58;
+		font-size: 0.6rem;
+	}
+
+	.filter-tag:hover {
+		transform: translateY(-2px);
+		color: var(--primary);
+	}
+
+	.filter-tag.active {
+		border-color: var(--primary);
+		background: var(--primary);
+		color: white;
+		box-shadow: 0 8px 20px color-mix(in oklch, var(--primary) 28%, transparent);
+	}
+
+	.friends-grid {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 1rem;
+	}
+
+	.friend-card {
+		position: relative;
+		display: flex;
+		min-height: 18rem;
+		flex-direction: column;
+		padding: 1.25rem;
+		overflow: hidden;
+		border-radius: calc(var(--radius-large) + 0.2rem);
+		animation: friend-card-in 480ms both;
+		animation-delay: calc(var(--i) * 70ms);
+		transition: transform 210ms ease, border-color 210ms ease, box-shadow 210ms ease;
+	}
+
+	.friend-card:hover {
+		transform: translateY(-6px);
+		border-color: color-mix(in oklch, var(--primary) 48%, transparent);
+		box-shadow: 0 24px 58px rgba(48, 35, 88, 0.16);
+	}
+
+	.friend-card-accent {
+		position: absolute;
+		top: -4rem;
+		right: -4rem;
+		width: 9rem;
+		height: 9rem;
+		border-radius: 50%;
+		background: color-mix(in oklch, var(--primary) 12%, transparent);
+		filter: blur(10px);
+		transition: transform 300ms ease;
+	}
+
+	.friend-card:hover .friend-card-accent {
+		transform: scale(1.35);
+	}
+
+	.friend-card-head {
+		position: relative;
+		display: flex;
+		align-items: center;
+		gap: 0.85rem;
+	}
+
+	.friend-avatar {
+		width: 4.3rem;
+		height: 4.3rem;
+		flex: none;
+		overflow: hidden;
+		border: 3px solid color-mix(in oklch, var(--primary) 12%, var(--card-bg));
+		border-radius: 1.25rem;
+		background: color-mix(in oklch, var(--primary) 8%, var(--card-bg));
+		box-shadow: 0 10px 25px rgba(48, 35, 88, 0.14);
+		transform: rotate(-2deg);
+	}
+
+	.friend-avatar img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		transition: transform 450ms cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	.friend-card:hover .friend-avatar img {
+		transform: scale(1.08);
+	}
+
+	.friend-identity {
+		min-width: 0;
+		flex: 1;
+	}
+
+	.friend-identity small {
+		color: var(--primary);
+		font-size: 0.54rem;
+		font-weight: 900;
+		letter-spacing: 0.12em;
+	}
+
+	.friend-identity h2 {
+		margin: 0.18rem 0 0;
+		overflow: hidden;
+		color: var(--deep-text);
+		font-size: 1.25rem;
+		font-weight: 900;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.friend-identity a {
+		display: block;
+		margin-top: 0.18rem;
+		overflow: hidden;
+		color: color-mix(in oklch, var(--deep-text) 42%, transparent);
+		font-size: 0.62rem;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.friend-external-icon {
+		align-self: flex-start;
+		flex: none;
+		color: var(--primary);
+		font-size: 1.2rem;
+	}
+
+	.friend-description {
+		flex: 1;
+		margin: 1.25rem 0;
+		color: color-mix(in oklch, var(--deep-text) 58%, transparent);
+		font-size: 0.8rem;
+		line-height: 1.65;
+	}
+
+	.friend-card-foot {
+		position: relative;
+		display: flex;
+		align-items: flex-end;
+		justify-content: space-between;
+		gap: 0.7rem;
+		padding-top: 0.9rem;
+		border-top: 1px dashed var(--friends-border);
+	}
+
+	.friend-tags {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.3rem;
+	}
+
+	.friend-tags span {
+		color: var(--primary);
+		font-size: 0.62rem;
+		font-weight: 800;
+	}
+
+	.friend-actions {
+		display: flex;
+		flex: none;
+		gap: 0.4rem;
+	}
+
+	.friend-actions button,
+	.friend-actions a {
+		display: flex;
+		height: 2.35rem;
+		align-items: center;
+		justify-content: center;
+		border-radius: 0.7rem;
+		font-size: 0.7rem;
+		font-weight: 800;
+		transition: transform 150ms ease;
+	}
+
+	.friend-actions button {
+		width: 2.35rem;
+		background: color-mix(in oklch, var(--primary) 8%, var(--card-bg));
+		color: var(--primary);
+	}
+
+	.friend-actions a {
+		gap: 0.3rem;
+		padding: 0 0.75rem;
+		background: var(--primary);
+		color: white;
+	}
+
+	.friend-actions button:hover,
+	.friend-actions a:hover {
+		transform: translateY(-2px);
+	}
+
+	.friends-empty {
+		padding: 3.5rem 1rem;
+		border-radius: calc(var(--radius-large) + 0.2rem);
+		text-align: center;
+	}
+
+	.friends-empty > svg {
+		color: var(--primary);
+		font-size: 3.5rem;
+	}
+
+	.friends-empty h2 {
+		margin: 0.6rem 0 0;
+		color: var(--deep-text);
+		font-size: 1.3rem;
+	}
+
+	.friends-empty p {
+		margin-top: 0.3rem;
+		color: color-mix(in oklch, var(--deep-text) 48%, transparent);
+		font-size: 0.78rem;
+	}
+
+	body.wallpaper-transparent .friends-hero,
+	body.wallpaper-transparent .friends-toolbar,
+	body.wallpaper-transparent .friend-card,
+	body.wallpaper-transparent .friends-empty {
+		background: var(--card-bg) !important;
+		backdrop-filter: blur(18px);
+	}
+
+	@keyframes friend-card-in {
+		from { opacity: 0; transform: translateY(16px); }
+		to { opacity: 1; transform: translateY(0); }
+	}
+
+	@media (max-width: 900px) {
+		.friends-grid {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+
+	@media (max-width: 600px) {
+		.friends-hero {
+			min-height: 14rem;
+			align-items: flex-end;
+			padding: 1.4rem 1.2rem;
+		}
+
+		.friends-hero-copy {
+			max-width: 80%;
+		}
+
+		.friends-hero h1 {
+			font-size: 3rem;
+		}
+
+		.friends-count {
+			position: absolute;
+			top: 1.25rem;
+			right: 1.2rem;
+		}
+
+		.friends-count strong {
+			font-size: 2rem;
+		}
+
+		.friends-constellation {
+			right: -4rem;
+			opacity: 0.45;
+		}
+
+		.filter-container {
+			flex-wrap: nowrap;
+			margin-inline: -1rem;
+			padding-inline: 1rem;
+			overflow-x: auto;
+			scrollbar-width: none;
+		}
+
+		.filter-container::-webkit-scrollbar {
+			display: none;
+		}
+
+		.filter-tag {
+			flex: none;
+		}
+
+		.friends-grid {
+			grid-template-columns: 1fr;
+		}
+
+		.friend-card {
+			min-height: 16rem;
+		}
+
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.friend-card {
+			animation: none;
+		}
+	}
+</style>

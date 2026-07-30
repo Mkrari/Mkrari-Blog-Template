@@ -1,0 +1,116 @@
+---
+import { Icon } from "astro-icon/components";
+import { commentConfig } from "@/config";
+import Twikoo from "./Twikoo.astro";
+
+interface Props {
+	path: string;
+	title?: string;
+	description?: string;
+}
+
+const {
+	path,
+	title = "留下你的想法",
+	description = "欢迎分享建议、问题，或只是来打个招呼。",
+} = Astro.props;
+---
+
+{
+	commentConfig.enable && commentConfig.twikoo && (
+		<section class="page-comments onload-animation" aria-labelledby="page-comments-title">
+			<header class="page-comments-header">
+				<div class="page-comments-icon">
+					<Icon name="material-symbols:forum-outline-rounded" />
+				</div>
+				<div>
+					<span>COMMENTS</span>
+					<h2 id="page-comments-title">{title}</h2>
+					<p>{description}</p>
+				</div>
+			</header>
+			<div class="page-comments-body">
+				<Twikoo path={path} />
+			</div>
+		</section>
+	)
+}
+
+<style is:global>
+	.page-comments {
+		--comment-border: color-mix(in oklch, var(--primary) 16%, transparent);
+		overflow: hidden;
+		border: 1px solid var(--comment-border);
+		border-radius: calc(var(--radius-large) + 0.25rem);
+		background: var(--card-bg);
+		box-shadow: 0 18px 46px rgba(48, 35, 88, 0.1);
+	}
+
+	.page-comments-header {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+		padding: 1.35rem 1.5rem;
+		border-bottom: 1px dashed var(--comment-border);
+		background:
+			radial-gradient(circle at 88% 15%, color-mix(in oklch, var(--primary) 16%, transparent), transparent 34%),
+			color-mix(in oklch, var(--card-bg) 95%, var(--primary) 5%);
+	}
+
+	.page-comments-icon {
+		display: grid;
+		width: 3.1rem;
+		height: 3.1rem;
+		flex: none;
+		place-items: center;
+		border-radius: 1rem;
+		background: color-mix(in oklch, var(--primary) 13%, transparent);
+		color: var(--primary);
+		font-size: 1.65rem;
+	}
+
+	.page-comments-header span {
+		color: var(--primary);
+		font-size: 0.62rem;
+		font-weight: 900;
+		letter-spacing: 0.17em;
+	}
+
+	.page-comments-header h2 {
+		margin: 0.08rem 0 0;
+		color: var(--deep-text);
+		font-size: 1.35rem;
+		font-weight: 900;
+	}
+
+	.page-comments-header p {
+		margin: 0.18rem 0 0;
+		color: color-mix(in oklch, var(--deep-text) 48%, transparent);
+		font-size: 0.75rem;
+	}
+
+	.page-comments-body {
+		padding: 1.35rem 1.5rem 1.5rem;
+	}
+
+	body.wallpaper-transparent .page-comments {
+		background: var(--card-bg) !important;
+		backdrop-filter: blur(18px);
+	}
+
+	@media (max-width: 600px) {
+		.page-comments-header,
+		.page-comments-body {
+			padding: 1.1rem;
+		}
+
+		.page-comments-header {
+			align-items: flex-start;
+		}
+
+		.page-comments-icon {
+			width: 2.7rem;
+			height: 2.7rem;
+		}
+	}
+</style>

@@ -1,0 +1,83 @@
+---
+import type { GetStaticPaths } from "astro";
+import { Icon } from "astro-icon/components";
+import Pagination from "@components/control/Pagination.astro";
+import PostPage from "@components/PostPage.astro";
+import { PAGE_SIZE } from "@constants/constants";
+import MainGridLayout from "@layouts/MainGridLayout.astro";
+import { getSortedPosts } from "@utils/content-utils";
+import { formatDateToYYYYMMDD } from "@utils/date-utils";
+import { initPostIdMap } from "@utils/permalink-utils";
+import {
+	getTagDirectories,
+	postHasTag,
+} from "@utils/tag-directory";
+
+export const getStaticPaths = (async ({ paginate }) => {
+	const allBlogPosts = await getSortedPosts();
+	initPostIdMap(allBlogPosts);
+	const directories = getTagDirectories(allBlogPosts);
+
+	return directories.flatMap((directory) => {
+		const posts = allBlogPosts.filter((post) =>
+			postHasTag(post, directory.name),
+		);
+
+		return paginate(posts, {
+			params: { tag: directory.slug },
+			props: { directory },
+			pageSize: PAGE_SIZE,
+		});
+	});
+}) satisfies GetStaticPaths;
+
+const { page, directory } = Astro.props;
+const len = page.data.length;
+---
+
+<MainGridLayout title={`${directory.name} - 目录`}>
+	<div class="card-base rounded-[var(--radius-large)] p-6 md:p-7 mb-4 onload-animation">
+		<div class="relative pl-4 md:pl-0">
+			<div
+				class="hidden md:block absolute top-1 left-[-1.125rem] w-1 h-5 rounded-md bg-[var(--primary)]"
+			>
+			</div>
+			<h1 class="text-2xl md:text-3xl font-bold text-90 mb-3">
+				{directory.name}
+			</h1>
+			<div
+				class="flex flex-wrap text-neutral-500 dark:text-neutral-400 items-center gap-4 gap-x-4 gap-y-2"
+			>
+				<div class="flex items-center">
+					<div class="meta-icon">
+						<Icon
+							name="material-symbols:folder-outline-rounded"
+							class="text-xl"
+						/>
+					</div>
+					<span class="text-50 text-sm font-medium">
+						{directory.count} 篇文章
+					</span>
+				</div>
+				<div class="flex items-center">
+					<div class="meta-icon">
+						<Icon
+							name="material-symbols:edit-calendar-outline-rounded"
+							class="text-xl"
+						/>
+					</div>
+					<span class="text-50 text-sm font-medium">
+						{formatDateToYYYYMMDD(directory.firstDate)}
+					</span>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<PostPage page={page}></PostPage>
+	<Pagination
+		class="mx-auto onload-animation"
+		page={page}
+		style={`animation-delay: calc(var(--content-delay) + ${len * 50}ms)`}
+	></Pagination>
+</MainGridLayout>

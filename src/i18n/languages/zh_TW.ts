@@ -1,0 +1,200 @@
+import Key from "../i18nKey";
+import type { Translation } from "../translation";
+
+export const zh_TW: Translation = {
+	[Key.home]: "首頁",
+	[Key.about]: "關於我們",
+	[Key.archive]: "歸檔",
+	[Key.search]: "搜尋",
+	[Key.other]: "其他",
+
+	// 導航欄標題
+	[Key.navLinks]: "連結",
+	[Key.navMy]: "我的",
+	[Key.navAbout]: "關於",
+	[Key.navOthers]: "其他",
+
+	[Key.tags]: "目錄",
+	[Key.recentPosts]: "最新文章",
+	[Key.postList]: "文章列表",
+	[Key.tableOfContents]: "目錄",
+	[Key.tocEmpty]: "當前頁面沒有目錄",
+
+	// 公告欄
+	[Key.announcement]: "公告",
+	[Key.announcementClose]: "關閉",
+
+	[Key.comments]: "評論",
+	[Key.friends]: "友鏈",
+	[Key.friendsSubtitle]: "發現更多優秀網站",
+	[Key.friendsSearchPlaceholder]: "搜索友鏈名稱或描述...",
+	[Key.friendsFilterAll]: "全部",
+	[Key.friendsNoResults]: "未找到匹配的友鏈",
+	[Key.friendsVisit]: "訪問",
+	[Key.friendsCopyLink]: "複製鏈接",
+	[Key.friendsCopySuccess]: "已複製",
+	[Key.friendsTags]: "標籤",
+	[Key.untitled]: "無標題",
+	[Key.uncategorized]: "未分類",
+	[Key.noTags]: "無目錄",
+
+	[Key.wordCount]: "字",
+	[Key.wordsCount]: "字",
+	[Key.minuteCount]: "分鐘",
+	[Key.minutesCount]: "分鐘",
+	[Key.postCount]: "篇文章",
+	[Key.postsCount]: "篇文章",
+
+	[Key.themeColor]: "主題色",
+
+	[Key.lightMode]: "亮色",
+	[Key.darkMode]: "暗色",
+	[Key.systemMode]: "跟隨系統",
+
+	[Key.more]: "更多",
+
+	[Key.author]: "作者",
+	[Key.publishedAt]: "發布於",
+	[Key.license]: "許可協議",
+
+	// 404頁面
+	[Key.notFound]: "404",
+	[Key.notFoundTitle]: "頁面未找到",
+	[Key.notFoundDescription]: "抱歉，您訪問的頁面不存在或已被移動。",
+	[Key.backToHome]: "返回首頁",
+
+	// 音樂播放器
+
+	// RSS 頁面
+	[Key.rss]: "RSS 訂閱",
+	[Key.rssDescription]: "訂閱獲取最新更新",
+	[Key.rssSubtitle]: "透過 RSS 訂閱，第一時間獲取最新文章和動態",
+	[Key.rssLink]: "RSS 鏈接",
+	[Key.rssCopyToReader]: "複製鏈接到你的 RSS 閱讀器",
+	[Key.rssCopyLink]: "複製鏈接",
+	[Key.rssLatestPosts]: "最新文章",
+	[Key.rssWhatIsRSS]: "什麼是 RSS？",
+	[Key.rssWhatIsRSSDescription]:
+		"RSS（Really Simple Syndication）是一種用於發布經常更新內容的標準格式。透過 RSS，你可以：",
+	[Key.rssBenefit1]: "及時獲取網站最新內容，無需手動訪問",
+	[Key.rssBenefit2]: "在一個地方管理多個網站的訂閱",
+	[Key.rssBenefit3]: "避免錯過重要更新和文章",
+	[Key.rssBenefit4]: "享受無廣告的純淨閱讀經驗",
+	[Key.rssHowToUse]:
+		"推薦使用 Feedly、Inoreader 或其他 RSS 閱讀器來訂閱本站。",
+	[Key.rssCopied]: "RSS 鏈接已複製到剪貼板！",
+	[Key.rssCopyFailed]: "複製失敗，請手動複製鏈接",
+
+	//Atom Feed 頁面
+	[Key.atom]: "Atom 訂閱",
+	[Key.atomDescription]: "訂閱獲取最新更新",
+	[Key.atomSubtitle]: "透過 Atom 訂閱，第一時間獲取最新文章和動態",
+	[Key.atomLink]: "Atom 鏈接",
+	[Key.atomCopyToReader]: "複製鏈接到你的 Atom 閱讀器",
+	[Key.atomCopyLink]: "複製鏈接",
+	[Key.atomLatestPosts]: "最新文章",
+	[Key.atomWhatIsAtom]: "什麼是 Atom？",
+	[Key.atomWhatIsAtomDescription]:
+		"Atom聯合格式（Atom Syndication Format）是一個基於XML的標準，用於描述訂閱源及其資訊項。透過 Atom，你可以：",
+	[Key.atomBenefit1]: "及時獲取網站最新內容，無需手動訪問",
+	[Key.atomBenefit2]: "在一個地方管理多個網站的訂閱",
+	[Key.atomBenefit3]: "避免錯過重要更新和文章",
+	[Key.atomBenefit4]: "享受無廣告的純淨閱讀經驗",
+	[Key.atomHowToUse]:
+		"推薦使用 Feedly、Inoreader 或其他 Atom 閱讀器來訂閱本站。",
+	[Key.atomCopied]: "Atom 鏈接已複製到剪貼板！",
+	[Key.atomCopyFailed]: "複製失敗，請手動複製鏈接",
+
+	// 技能展示頁面
+
+	// 其他
+	// 密碼保護
+	[Key.passwordProtected]: "密碼保護",
+	[Key.passwordProtectedTitle]: "此內容受密碼保護",
+	[Key.passwordProtectedDescription]: "請輸入密碼以查看受保護的內容",
+	[Key.passwordPlaceholder]: "請輸入密碼",
+	[Key.passwordUnlock]: "解鎖",
+	[Key.passwordUnlocking]: "解鎖中...",
+	[Key.passwordIncorrect]: "密碼錯誤，請重試",
+	[Key.passwordDecryptError]: "解密失敗，請檢查密碼是否正確",
+	[Key.passwordRequired]: "請輸入密碼",
+	[Key.passwordVerifying]: "驗證中...",
+	[Key.passwordDecryptFailed]: "解密失敗，請檢查密碼",
+	[Key.passwordDecryptRetry]: "解密失敗，請重試",
+	[Key.passwordUnlockButton]: "解鎖",
+	[Key.copyFailed]: "複製失敗:",
+	[Key.syntaxHighlightFailed]: "語法高亮失敗:",
+	[Key.autoSyntaxHighlightFailed]: "自動語法高亮也失敗:",
+	[Key.decryptionError]: "解密過程中發生錯誤:",
+
+	//最後編輯時間卡片
+	[Key.lastModifiedPrefix]: "距離上次編輯: ",
+	[Key.lastModifiedOutdated]: "部分資訊可能已經過時",
+	[Key.year]: "年",
+	[Key.month]: "月",
+	[Key.day]: "天",
+	[Key.hour]: "小時",
+	[Key.minute]: "分",
+	[Key.second]: "秒",
+
+	// 壁紙模式
+	[Key.wallpaperBanner]: "橫幅模式",
+	[Key.wallpaperFullscreen]: "全屏模式",
+	[Key.wallpaperNone]: "隱藏壁紙",
+
+	// 站點統計
+	[Key.siteStats]: "站點統計",
+	[Key.siteStatsPostCount]: "文章",
+	[Key.siteStatsTagCount]: "目錄",
+	[Key.siteStatsTotalWords]: "總字數",
+	[Key.siteStatsRunningDays]: "運行天數",
+	[Key.siteStatsLastUpdate]: "最後活動",
+	[Key.siteStatsDaysAgo]: "{days} 天前",
+	[Key.siteStatsDays]: "{days} 天",
+
+	// 日曆組件
+	[Key.calendarSunday]: "日",
+	[Key.calendarMonday]: "一",
+	[Key.calendarTuesday]: "二",
+	[Key.calendarWednesday]: "三",
+	[Key.calendarThursday]: "四",
+	[Key.calendarFriday]: "五",
+	[Key.calendarSaturday]: "六",
+	[Key.calendarJanuary]: "1月",
+	[Key.calendarFebruary]: "2月",
+	[Key.calendarMarch]: "3月",
+	[Key.calendarApril]: "4月",
+	[Key.calendarMay]: "5月",
+	[Key.calendarJune]: "6月",
+	[Key.calendarJuly]: "7月",
+	[Key.calendarAugust]: "8月",
+	[Key.calendarSeptember]: "9月",
+	[Key.calendarOctober]: "10月",
+	[Key.calendarNovember]: "11月",
+	[Key.calendarDecember]: "12月",
+
+	// 按讚功能
+	[Key.like]: "按讚",
+	[Key.liked]: "已讚",
+
+	// 分享功能
+	[Key.shareArticle]: "分享",
+	[Key.generatingPoster]: "正在生成海報...",
+	[Key.copied]: "已複製",
+	[Key.copyLink]: "複製連結",
+	[Key.savePoster]: "儲存海報",
+	[Key.scanToRead]: "掃碼閱讀",
+	[Key.shareOnSocial]: "分享",
+	[Key.shareOnSocialDescription]:
+		"如果這篇文章對你有幫助，歡迎分享給更多人！",
+
+	// 個人資料統計
+	[Key.profileStatsLoading]: "統計載入中...",
+	[Key.profileStatsPageViews]: "瀏覽次數",
+	[Key.profileStatsVisits]: "造訪次數",
+	[Key.profileStatsUnavailable]: "統計不可用",
+
+	// 布局切換按鈕
+	[Key.switchToGridMode]: "切換到網格模式",
+	[Key.switchToListMode]: "切換到列表模式",
+};

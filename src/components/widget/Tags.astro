@@ -1,0 +1,40 @@
+---
+
+import I18nKey from "../../i18n/i18nKey";
+import { i18n } from "../../i18n/translation";
+import { getTagList } from "../../utils/content-utils";
+import { getTagDirectoryUrl } from "../../utils/tag-directory";
+import { widgetManager } from "../../utils/widget-manager";
+import ButtonLink from "../control/ButtonLink.astro";
+import WidgetLayout from "./WidgetLayout.astro";
+
+const tags = await getTagList();
+
+const COLLAPSED_HEIGHT = "7.5rem";
+
+// 使用统一的组件管理器检查是否应该折叠
+const tagsComponent = widgetManager
+	.getConfig()
+	.properties.find((p) => p.type === "tags");
+const isCollapsed = tagsComponent
+	? widgetManager.isCollapsed(tagsComponent, tags.length)
+	: false;
+
+interface Props {
+	class?: string;
+	style?: string;
+}
+const className = Astro.props.class;
+const style = Astro.props.style;
+---
+<WidgetLayout name={i18n(I18nKey.tags)} id="tags" isCollapsed={isCollapsed} collapsedHeight={COLLAPSED_HEIGHT} class={className} style={style}>
+    {tags.map((t) =>
+        <ButtonLink
+            url={getTagDirectoryUrl(t.name)}
+            badge={String(t.count)}
+            label={`View all posts in the ${t.name.trim()} directory`}
+        >
+            {t.name.trim()}
+        </ButtonLink>
+    )}
+</WidgetLayout>

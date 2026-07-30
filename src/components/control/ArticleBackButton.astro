@@ -1,0 +1,98 @@
+---
+import { Icon } from "astro-icon/components";
+---
+
+<article-back-button>
+	<button type="button" class="article-back-button" aria-label="返回进入文章前的页面">
+		<Icon name="material-symbols:arrow-back-rounded" />
+		<span>返回</span>
+	</button>
+</article-back-button>
+
+<script>
+	class ArticleBackButton extends HTMLElement {
+		connectedCallback() {
+			const button = this.querySelector<HTMLButtonElement>("button");
+			if (!button || button.dataset.ready === "true") return;
+			button.dataset.ready = "true";
+			button.addEventListener("click", () => {
+				if (window.history.length > 1) {
+					window.history.back();
+					return;
+				}
+				window.location.assign("/all/");
+			});
+		}
+	}
+
+	if (!customElements.get("article-back-button")) {
+		customElements.define("article-back-button", ArticleBackButton);
+	}
+</script>
+
+<style>
+	article-back-button {
+		position: absolute;
+		z-index: 20;
+		top: 1.2rem;
+		right: 1.25rem;
+	}
+
+	.article-back-button {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.35rem;
+		height: 2.5rem;
+		padding: 0 0.8rem;
+		border: 1px solid color-mix(in oklch, var(--primary) 18%, transparent);
+		border-radius: 0.85rem;
+		background: color-mix(in oklch, var(--card-bg) 78%, transparent);
+		color: color-mix(in oklch, var(--deep-text) 68%, transparent);
+		font-size: 0.75rem;
+		font-weight: 750;
+		backdrop-filter: blur(12px);
+		box-shadow: 0 7px 20px rgba(38, 35, 66, 0.06);
+		transition:
+			color 180ms ease,
+			border-color 180ms ease,
+			background 180ms ease,
+			transform 180ms ease;
+	}
+
+	.article-back-button:hover {
+		border-color: color-mix(in oklch, var(--primary) 52%, transparent);
+		background: color-mix(in oklch, var(--card-bg) 90%, var(--primary) 10%);
+		color: var(--primary);
+		transform: translateX(-0.15rem);
+	}
+
+	.article-back-button :global(svg) {
+		font-size: 1.2rem;
+	}
+
+	:global(.post-reading-summary) {
+		padding-right: 5rem;
+	}
+
+	@media (max-width: 640px) {
+		article-back-button {
+			top: 1rem;
+			right: 1rem;
+		}
+
+		.article-back-button {
+			width: 2.35rem;
+			height: 2.35rem;
+			padding: 0;
+		}
+
+		.article-back-button span {
+			display: none;
+		}
+
+		:global(.post-reading-summary) {
+			padding-right: 3rem;
+		}
+	}
+</style>

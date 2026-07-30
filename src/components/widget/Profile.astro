@@ -1,0 +1,110 @@
+---
+import { Icon } from "astro-icon/components";
+import { profileConfig } from "../../config";
+import { url } from "../../utils/url-utils";
+import ImageWrapper from "../misc/ImageWrapper.astro";
+import TypewriterText from "../TypewriterText.astro";
+
+interface Props {
+	variant?: "default" | "home" | "article";
+}
+
+const { variant = "default" } = Astro.props;
+const profileClass = `profile-card--${variant}`;
+---
+
+<div class:list={["card-base profile-card p-3", profileClass]}>
+	<div class="profile-media">
+		<a
+			aria-label="前往个人页面"
+			href={url("/about/")}
+			class="profile-avatar group block relative mx-auto mt-1 lg:mx-0 lg:mt-0
+				max-w-[12rem] lg:max-w-none overflow-hidden rounded-xl active:scale-95"
+		>
+			<div
+				class="absolute transition pointer-events-none group-hover:bg-black/30 group-active:bg-black/50
+					w-full h-full z-50 flex items-center justify-center"
+			>
+				<Icon
+					name="fa7-regular:address-card"
+					class="transition opacity-0 scale-90 group-hover:scale-100 group-hover:opacity-100 text-white text-5xl"
+				/>
+			</div>
+			<ImageWrapper
+				src={profileConfig.avatar || ""}
+				alt="Profile Image of the Author"
+				class="profile-avatar-image mx-auto lg:w-full h-full lg:mt-0"
+			/>
+		</a>
+
+		{variant !== "article" && (
+			<div class="profile-links flex flex-wrap gap-2 justify-center">
+				{
+					profileConfig.links.map((item) => (
+						<a
+							rel="me"
+							aria-label={item.name}
+							title={item.name}
+							href={item.url}
+							target="_blank"
+							class="btn-regular profile-social-link rounded-lg h-10 active:scale-90"
+						>
+							<Icon name={item.icon} class="text-[1.35rem]" />
+							{variant === "home" && (
+								<span class="profile-social-label">{item.name}</span>
+							)}
+						</a>
+					))
+				}
+			</div>
+		)}
+	</div>
+
+	<div class="profile-copy px-2">
+		<div class="profile-name font-bold text-xl text-center mb-1 dark:text-neutral-50 transition">
+			{profileConfig.name}
+		</div>
+		<div class="profile-accent h-1 w-5 bg-[var(--primary)] mx-auto rounded-full mb-2 transition"></div>
+
+		{variant === "article" && (
+			<div class="profile-links profile-links--article flex flex-wrap gap-2 justify-center">
+				{
+					profileConfig.links.map((item) => (
+						<a
+							rel="me"
+							aria-label={item.name}
+							title={item.name}
+							href={item.url}
+							target="_blank"
+							class="btn-regular profile-social-link rounded-lg h-10 active:scale-90"
+						>
+							<Icon name={item.icon} class="text-[1.35rem]" />
+							<span class="profile-social-label">{item.name}</span>
+						</a>
+					))
+				}
+			</div>
+		)}
+
+		<div class="profile-bio text-center mb-2.5 transition">
+			{
+				profileConfig.typewriter?.enable && variant === "default" ? (
+					<TypewriterText
+						text={profileConfig.bio || ""}
+						speed={profileConfig.typewriter.speed}
+						class="inline-block"
+					/>
+				) : (
+					profileConfig.bio
+				)
+			}
+		</div>
+	</div>
+</div>
+
+<style>
+	.profile-bio {
+		color: var(--deep-text) !important;
+		font-weight: 400 !important;
+	}
+</style>

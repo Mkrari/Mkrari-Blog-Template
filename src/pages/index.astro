@@ -1,0 +1,794 @@
+---
+import TagDirectoryCard from "@components/TagDirectoryCard.astro";
+import PageComments from "@components/comment/PageComments.astro";
+import RecentPostsCarousel from "@components/home/RecentPostsCarousel.astro";
+import Announcement from "@components/widget/Announcement.astro";
+import Calendar from "@components/widget/Calendar.astro";
+import Profile from "@components/widget/Profile.astro";
+import SiteStats from "@components/widget/SiteStats.astro";
+import MainGridLayout from "@layouts/MainGridLayout.astro";
+import { getSortedPosts } from "@utils/content-utils";
+import { initPostIdMap } from "@utils/permalink-utils";
+import { getTagDirectories } from "@utils/tag-directory";
+import { Icon } from "astro-icon/components";
+
+const allBlogPosts = await getSortedPosts();
+initPostIdMap(allBlogPosts);
+const directories = getTagDirectories(allBlogPosts);
+const recentPosts = allBlogPosts.slice(0, 5);
+---
+
+<MainGridLayout title="目录" hideSidebars>
+	<div class="home-bento">
+		<header class="home-hero onload-animation">
+			<div>
+				<div class="home-eyebrow">
+					<span class="home-eyebrow-dot"></span>
+					MKRARI · PERSONAL LOG
+				</div>
+				<h1>在记录里，找到下一次灵感</h1>
+				<p>技术、竞赛与生活碎片，都被整理成可以慢慢翻阅的章节。</p>
+			</div>
+			<a class="home-archive-link" href="/archive/">
+				<span>
+					<small>ARCHIVE</small>
+					查看全部 {allBlogPosts.length} 篇文章
+				</span>
+				<Icon name="material-symbols:arrow-outward-rounded" />
+			</a>
+		</header>
+
+		<section class="home-dashboard" aria-label="个人资料与站点概览">
+			<div class="home-dashboard-summary">
+				<div class="home-panel home-profile onload-animation" style="--i: 1">
+					<Profile variant="home" />
+				</div>
+				<div class="home-dashboard-compact">
+					<div class="home-panel home-stats onload-animation" style="--i: 2">
+						<SiteStats />
+					</div>
+					<div class="home-panel home-announcement onload-animation" style="--i: 3">
+						<Announcement />
+					</div>
+				</div>
+			</div>
+			<div class="home-panel home-calendar onload-animation" style="--i: 4">
+				<Calendar class="home-calendar-widget" />
+			</div>
+			<a class="home-discovery onload-animation" style="--i: 5" href="/archive/">
+				<span class="home-discovery-icon" aria-hidden="true">
+					<Icon name="material-symbols:explore-outline-rounded" />
+				</span>
+				<span class="home-discovery-copy">
+					<small>EXPLORE NEXT</small>
+					<strong>沿着好奇心，继续探索下一页</strong>
+					<span>网络编程 · 算法竞赛 · 学习札记</span>
+				</span>
+				<span class="home-discovery-action">
+					随便逛逛
+					<Icon name="material-symbols:arrow-forward-rounded" />
+				</span>
+			</a>
+		</section>
+
+		<RecentPostsCarousel posts={recentPosts} />
+
+		<section class="home-directory-section" aria-labelledby="directory-heading">
+			<div class="home-section-heading onload-animation" style="--i: 6">
+				<div>
+					<span>COLLECTIONS</span>
+					<h2 id="directory-heading">探索文章目录</h2>
+				</div>
+				<p>{directories.length} 个主题 · 持续更新中</p>
+			</div>
+
+			<div class="home-directory-grid">
+				{
+					directories.map((directory, index) => (
+						<TagDirectoryCard
+							directory={directory}
+							class="onload-animation"
+							style={`--i: ${index + 7}; --interval: 45ms;`}
+						/>
+					))
+				}
+			</div>
+		</section>
+
+		<PageComments
+			path="/"
+			title="在主页留下足迹"
+			description="关于博客布局、文章或近况，都欢迎在这里聊聊。"
+		/>
+	</div>
+</MainGridLayout>
+
+<style is:global>
+	.home-bento {
+		--home-glass: color-mix(in oklch, var(--card-bg) 88%, transparent);
+		--home-border: color-mix(in oklch, var(--primary) 14%, transparent);
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+		padding-bottom: 1rem;
+	}
+
+	.home-hero,
+	.home-panel > .card-base,
+	.home-panel > widget-layout,
+	.home-directory-grid .blog-card {
+		border: 1px solid var(--home-border);
+		box-shadow:
+			0 18px 45px rgba(50, 38, 92, 0.07),
+			inset 0 1px 0 rgba(255, 255, 255, 0.35);
+	}
+
+	.home-hero {
+		position: relative;
+		display: flex;
+		align-items: flex-end;
+		justify-content: space-between;
+		gap: 2rem;
+		min-height: 13rem;
+		padding: clamp(1.5rem, 3vw, 2.75rem);
+		overflow: hidden;
+		border-radius: calc(var(--radius-large) + 0.35rem);
+		background:
+			radial-gradient(circle at 82% 18%, color-mix(in oklch, var(--primary) 22%, transparent), transparent 34%),
+			linear-gradient(135deg, color-mix(in oklch, var(--card-bg) 94%, white 6%), var(--home-glass));
+		backdrop-filter: blur(18px);
+	}
+
+	.home-hero::before {
+		content: "";
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+		background-image:
+			linear-gradient(color-mix(in oklch, var(--primary) 7%, transparent) 1px, transparent 1px),
+			linear-gradient(90deg, color-mix(in oklch, var(--primary) 7%, transparent) 1px, transparent 1px);
+		background-size: 34px 34px;
+		mask-image: linear-gradient(90deg, black, transparent 75%);
+	}
+
+	.home-hero > * {
+		position: relative;
+		z-index: 1;
+	}
+
+	.home-eyebrow {
+		display: flex;
+		align-items: center;
+		gap: 0.55rem;
+		margin-bottom: 0.85rem;
+		color: var(--primary);
+		font-size: 0.72rem;
+		font-weight: 800;
+		letter-spacing: 0.16em;
+	}
+
+	.home-eyebrow-dot {
+		width: 0.5rem;
+		height: 0.5rem;
+		border-radius: 999px;
+		background: var(--primary);
+		box-shadow: 0 0 0 5px color-mix(in oklch, var(--primary) 14%, transparent);
+	}
+
+	.home-hero h1 {
+		max-width: 700px;
+		margin: 0;
+		color: var(--deep-text);
+		font-size: clamp(2rem, 4.2vw, 3.65rem);
+		font-weight: 900;
+		letter-spacing: -0.045em;
+		line-height: 1.08;
+	}
+
+	.home-hero p {
+		margin: 0.95rem 0 0;
+		color: color-mix(in oklch, var(--deep-text) 58%, transparent);
+		font-size: 0.95rem;
+	}
+
+	.home-archive-link {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1.25rem;
+		min-width: 14rem;
+		padding: 0.95rem 1rem 0.95rem 1.2rem;
+		border: 1px solid color-mix(in oklch, var(--primary) 18%, transparent);
+		border-radius: 1rem;
+		background: color-mix(in oklch, var(--card-bg) 76%, transparent);
+		color: color-mix(in oklch, var(--deep-text) 78%, transparent);
+		font-size: 0.88rem;
+		font-weight: 700;
+		backdrop-filter: blur(12px);
+		transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+	}
+
+	.home-archive-link small {
+		display: block;
+		margin-bottom: 0.2rem;
+		color: var(--primary);
+		font-size: 0.62rem;
+		letter-spacing: 0.14em;
+	}
+
+	.home-archive-link svg {
+		flex: none;
+		font-size: 1.55rem;
+		color: var(--primary);
+	}
+
+	.home-archive-link:hover {
+		transform: translateY(-3px);
+		border-color: color-mix(in oklch, var(--primary) 40%, transparent);
+		background: color-mix(in oklch, var(--card-bg) 92%, var(--primary) 8%);
+	}
+
+	.home-dashboard {
+		display: grid;
+		grid-template-columns: minmax(18rem, 1fr) minmax(10.5rem, 0.58fr) minmax(28rem, 1.8fr);
+		grid-template-rows: auto auto 1fr;
+		align-items: stretch;
+		gap: 1rem;
+	}
+
+	.home-dashboard-summary {
+		display: contents;
+	}
+
+	.home-dashboard-compact {
+		display: contents;
+	}
+
+	.home-profile {
+		grid-column: 1 / 3;
+		grid-row: 1;
+	}
+
+	.home-stats {
+		grid-column: 1;
+		grid-row: 2 / 4;
+	}
+
+	.home-announcement {
+		grid-column: 2;
+		grid-row: 2;
+	}
+
+	.home-calendar {
+		grid-column: 3;
+		grid-row: 1 / 3;
+	}
+
+	.home-panel,
+	.home-panel > .card-base,
+	.home-panel > widget-layout {
+		height: 100%;
+	}
+
+	.home-profile,
+	.home-profile > .profile-card {
+		height: auto;
+	}
+
+	.home-panel > .card-base,
+	.home-panel > widget-layout {
+		background: var(--card-bg);
+		backdrop-filter: blur(16px);
+	}
+
+	.home-profile .profile-card {
+		display: grid;
+		grid-template-columns: 7rem minmax(0, 1fr);
+		align-items: start;
+		gap: 1.15rem;
+		padding: 1rem;
+	}
+
+	.home-profile .profile-media {
+		display: flex;
+		width: 7rem;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.65rem;
+	}
+
+	.home-profile .profile-avatar {
+		width: 7rem;
+		height: 7rem;
+		margin: 0 !important;
+	}
+
+	.home-profile .profile-copy {
+		align-self: center;
+		padding: 0 0.5rem;
+	}
+
+	.home-profile .profile-name,
+	.home-profile .profile-bio {
+		text-align: left;
+	}
+
+	.home-profile .profile-name {
+		font-size: 1.8rem;
+	}
+
+	.home-profile .profile-accent {
+		margin-left: 0;
+	}
+
+	.home-profile .profile-links {
+		justify-content: center;
+		margin: 0;
+	}
+
+	.home-profile .profile-social-link {
+		width: auto;
+		min-width: 5.5rem;
+		height: 2.35rem;
+		gap: 0.45rem;
+		padding: 0 0.75rem;
+		font-size: 0.82rem;
+		font-weight: 800;
+	}
+
+	.home-profile .profile-bio {
+		margin: 0;
+		color: var(--deep-text);
+		font-size: 0.95rem;
+		font-weight: 400;
+		line-height: 1.75;
+	}
+
+	.home-announcement {
+		width: 100%;
+		height: auto;
+		aspect-ratio: 1;
+	}
+
+	.home-announcement widget-layout {
+		display: flex;
+		flex-direction: column;
+		justify-content: flex-start;
+		padding: 1rem;
+	}
+
+	.home-announcement .widget-title {
+		margin-bottom: 0.55rem;
+	}
+
+	.home-announcement #announcement {
+		display: flex;
+		height: 100%;
+		flex-direction: column;
+		justify-content: flex-start;
+		padding: 0.2rem 0.15rem 0 !important;
+		font-size: 0.92rem;
+		line-height: 1.75;
+	}
+
+	.home-discovery {
+		position: relative;
+		display: grid;
+		grid-column: 2 / 4;
+		grid-row: 3;
+		grid-template-columns: auto minmax(0, 1fr) auto;
+		align-items: center;
+		gap: 1rem;
+		min-height: 8rem;
+		padding: 1.15rem 1.35rem;
+		overflow: hidden;
+		border: 1px solid var(--home-border);
+		border-radius: var(--radius-large);
+		background:
+			radial-gradient(circle at 82% 30%, color-mix(in oklch, var(--primary) 20%, transparent), transparent 32%),
+			linear-gradient(135deg, color-mix(in oklch, var(--card-bg) 94%, white 6%), var(--home-glass));
+		box-shadow:
+			0 18px 45px rgba(50, 38, 92, 0.07),
+			inset 0 1px 0 rgba(255, 255, 255, 0.35);
+		color: inherit;
+		backdrop-filter: blur(18px);
+		transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
+	}
+
+	.home-discovery::after {
+		content: "";
+		position: absolute;
+		right: 8%;
+		bottom: -3.5rem;
+		width: 12rem;
+		height: 7rem;
+		border: 1px solid color-mix(in oklch, var(--primary) 20%, transparent);
+		border-radius: 50%;
+		transform: rotate(-12deg);
+	}
+
+	.home-discovery:hover {
+		transform: translateY(-3px);
+		border-color: color-mix(in oklch, var(--primary) 38%, transparent);
+		box-shadow: 0 22px 50px rgba(50, 38, 92, 0.12);
+	}
+
+	.home-discovery-icon {
+		display: grid;
+		width: 3.5rem;
+		height: 3.5rem;
+		place-items: center;
+		border-radius: 1.1rem;
+		background: color-mix(in oklch, var(--primary) 14%, var(--card-bg));
+		color: var(--primary);
+		font-size: 2rem;
+	}
+
+	.home-discovery-copy {
+		display: grid;
+		min-width: 0;
+		gap: 0.15rem;
+	}
+
+	.home-discovery-copy small {
+		color: var(--primary);
+		font-size: 0.62rem;
+		font-weight: 900;
+		letter-spacing: 0.16em;
+	}
+
+	.home-discovery-copy strong {
+		color: var(--deep-text);
+		font-size: clamp(1rem, 1.45vw, 1.35rem);
+		font-weight: 900;
+	}
+
+	.home-discovery-copy > span {
+		color: color-mix(in oklch, var(--deep-text) 55%, transparent);
+		font-size: 0.78rem;
+	}
+
+	.home-discovery-action {
+		position: relative;
+		z-index: 1;
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		color: var(--primary);
+		font-size: 0.78rem;
+		font-weight: 850;
+		white-space: nowrap;
+	}
+
+	.home-discovery:hover .home-discovery-action svg {
+		transform: translateX(0.2rem);
+	}
+
+	.home-discovery-action svg {
+		font-size: 1.15rem;
+		transition: transform 180ms ease;
+	}
+
+	.home-section-heading {
+		display: flex;
+		align-items: flex-end;
+		justify-content: space-between;
+		gap: 1rem;
+		padding: 1.1rem 0.35rem 0.25rem;
+	}
+
+	.home-section-heading span {
+		color: var(--primary);
+		font-size: 0.68rem;
+		font-weight: 800;
+		letter-spacing: 0.17em;
+	}
+
+	.home-section-heading h2 {
+		margin: 0.15rem 0 0;
+		color: var(--deep-text);
+		font-size: clamp(1.55rem, 2.5vw, 2.15rem);
+		font-weight: 900;
+		letter-spacing: -0.03em;
+	}
+
+	.home-section-heading p {
+		color: color-mix(in oklch, var(--deep-text) 56%, transparent);
+		font-size: 0.82rem;
+	}
+
+	.home-directory-grid {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 1rem;
+	}
+
+	.home-directory-grid .blog-card {
+		--coverWidth: 100% !important;
+		display: grid !important;
+		grid-template-rows: 13rem auto;
+		min-height: 0;
+		background: var(--card-bg);
+		backdrop-filter: blur(16px);
+		transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
+	}
+
+	.home-directory-grid .blog-card:first-of-type {
+		grid-column: span 2;
+		grid-template-columns: minmax(0, 1fr) minmax(19rem, 0.85fr);
+		grid-template-rows: minmax(18rem, auto);
+	}
+
+	.home-directory-grid .blog-card:hover {
+		transform: translateY(-5px);
+		border-color: color-mix(in oklch, var(--primary) 38%, transparent);
+		box-shadow: 0 22px 55px rgba(50, 38, 92, 0.13);
+	}
+
+	.home-directory-grid .post-card-title {
+		font-size: clamp(1.35rem, 2.2vw, 2rem);
+	}
+
+	.home-directory-grid .blog-card > div:first-child {
+		width: 100% !important;
+		padding: 1.35rem 1.35rem 1.25rem 1.9rem !important;
+	}
+
+	.home-directory-grid .post-card-cover {
+		position: relative !important;
+		inset: auto !important;
+		order: -1;
+		width: calc(100% - 1.4rem) !important;
+		height: calc(100% - 1.4rem);
+		min-height: 11.6rem;
+		max-height: none !important;
+		margin: 0.7rem !important;
+		border: 1px solid color-mix(in oklch, var(--primary) 10%, transparent);
+		background:
+			color-mix(in oklch, var(--card-bg) 92%, var(--primary) 8%);
+	}
+
+	.home-directory-grid .blog-card:first-of-type .post-card-cover {
+		grid-column: 2;
+		grid-row: 1;
+		order: 0;
+	}
+
+	.home-directory-grid .blog-card:first-of-type > div:first-child {
+		grid-column: 1;
+		grid-row: 1;
+		align-self: center;
+	}
+
+	.home-directory-grid .post-card-cover-image img {
+		object-fit: cover !important;
+		object-position: center;
+		padding: 0;
+		transition: transform 550ms cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	.home-directory-grid .blog-card:nth-of-type(2) .post-card-cover-image img {
+		object-position: center 48%;
+	}
+
+	.home-directory-grid .blog-card:nth-of-type(4) .post-card-cover-image img {
+		object-position: center 44%;
+	}
+
+	.home-directory-grid .blog-card:hover .post-card-cover-image img {
+		transform: scale(1.06);
+	}
+
+	.home-calendar #calendar-widget {
+		height: 100%;
+	}
+
+	.home-calendar {
+		height: 27rem;
+	}
+
+	.home-calendar .home-calendar-widget {
+		display: block !important;
+	}
+
+	.home-calendar #calendar-grid > div {
+		height: 2.15rem;
+		aspect-ratio: auto !important;
+	}
+
+	.home-calendar #calendar-posts {
+		margin-top: 0.7rem;
+	}
+
+	.home-calendar #calendar-posts-list {
+		max-height: 7rem;
+	}
+
+	.home-stats {
+		overflow: hidden;
+		border: 1px solid var(--home-border);
+		border-radius: var(--radius-large);
+		background: var(--card-bg);
+		box-shadow:
+			0 18px 45px rgba(50, 38, 92, 0.07),
+			inset 0 1px 0 rgba(255, 255, 255, 0.35);
+	}
+
+	.home-stats > widget-layout {
+		border: 0;
+		padding: 0.75rem 0.8rem;
+		box-shadow: none;
+	}
+
+	.home-stats #site-stats > div:last-child {
+		gap: 0 !important;
+	}
+
+	body.wallpaper-transparent .home-panel > .card-base,
+	body.wallpaper-transparent .home-panel > widget-layout,
+	body.wallpaper-transparent .home-stats,
+	body.wallpaper-transparent .home-discovery,
+	body.wallpaper-transparent .home-directory-grid .blog-card {
+		background: var(--card-bg) !important;
+		backdrop-filter: blur(18px) !important;
+		-webkit-backdrop-filter: blur(18px) !important;
+	}
+
+	:root.dark .home-hero h1,
+	:root.dark .home-section-heading h2 {
+		color: rgb(245 247 255);
+		text-shadow: 0 2px 18px rgba(0, 0, 0, 0.2);
+	}
+
+	:root.dark .home-hero p,
+	:root.dark .home-section-heading p {
+		color: rgb(202 208 224);
+	}
+
+	:root.dark .home-archive-link {
+		color: rgb(232 236 248);
+	}
+
+	@media (max-width: 1100px) {
+		.home-dashboard {
+			grid-template-columns: 1fr;
+			grid-template-rows: none;
+		}
+
+		.home-dashboard-summary,
+		.home-dashboard-compact {
+			display: grid;
+			min-width: 0;
+			gap: 1rem;
+		}
+
+		.home-dashboard-compact {
+			grid-template-columns: minmax(18rem, 1fr) minmax(10.5rem, 0.58fr);
+		}
+
+		.home-profile,
+		.home-stats,
+		.home-announcement,
+		.home-calendar,
+		.home-discovery {
+			grid-column: auto;
+			grid-row: auto;
+		}
+
+		.home-calendar {
+			width: 100%;
+			height: auto;
+		}
+
+		.home-directory-grid {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+
+	@media (max-width: 767px) {
+		.home-bento {
+			gap: 0.75rem;
+		}
+
+		.home-hero {
+			display: block;
+			min-height: 0;
+			padding: 1.5rem 1.2rem;
+		}
+
+		.home-hero p {
+			font-size: 0.86rem;
+			line-height: 1.6;
+		}
+
+		.home-archive-link {
+			min-width: 0;
+			margin-top: 1.25rem;
+		}
+
+		.home-dashboard,
+		.home-dashboard-compact,
+		.home-directory-grid {
+			grid-template-columns: 1fr;
+		}
+
+		.home-discovery {
+			grid-template-columns: auto minmax(0, 1fr);
+		}
+
+		.home-discovery-action {
+			grid-column: 2;
+		}
+
+		.home-directory-grid .blog-card:first-of-type,
+		.home-calendar {
+			grid-column: auto;
+		}
+
+		.home-directory-grid .blog-card,
+		.home-directory-grid .blog-card:first-of-type {
+			display: flex !important;
+			flex-direction: column;
+		}
+
+		.home-directory-grid .post-card-cover,
+		.home-directory-grid .blog-card:first-of-type .post-card-cover {
+			order: -1;
+			width: calc(100% - 1.4rem) !important;
+			height: 13.5rem;
+		}
+
+		.home-profile .profile-card {
+			grid-template-columns: 5.5rem minmax(0, 1fr);
+			gap: 0.85rem;
+		}
+
+		.home-profile .profile-avatar {
+			width: 5.5rem;
+			height: 5.5rem;
+		}
+
+		.home-profile .profile-media {
+			width: 5.5rem;
+		}
+
+		.home-profile .profile-name {
+			font-size: 1.35rem;
+		}
+
+		.home-profile .profile-bio {
+			font-size: 0.82rem;
+		}
+
+		.home-profile .profile-links {
+			margin-top: 0.55rem;
+		}
+
+		.home-section-heading {
+			align-items: flex-start;
+			padding-inline: 0.25rem;
+		}
+
+		.home-section-heading p {
+			max-width: 7rem;
+			text-align: right;
+		}
+
+		.home-directory-grid .blog-card {
+			min-height: 0;
+		}
+
+		.home-announcement widget-layout {
+			min-height: 9rem;
+		}
+
+		.home-announcement {
+			aspect-ratio: auto;
+		}
+
+		.home-announcement #announcement {
+			padding-top: 0;
+			border-left: 0;
+		}
+	}
+</style>

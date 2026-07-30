@@ -1,0 +1,145 @@
+---
+import { Icon } from "astro-icon/components";
+import type { TagDirectory } from "@/utils/tag-directory";
+import { formatDateToYYYYMMDD } from "@/utils/date-utils";
+import ImageWrapper from "./misc/ImageWrapper.astro";
+
+interface Props {
+	directory: TagDirectory;
+	class?: string;
+	style?: string;
+}
+
+const { directory, style } = Astro.props;
+const className = Astro.props.class;
+const latestPost = directory.latestPost;
+const hasCover =
+	directory.cover !== undefined &&
+	directory.cover !== null &&
+	directory.cover !== "";
+const coverWidth = "28%";
+---
+
+<div
+	class:list={[
+		"card-base blog-card post-card-item flex flex-col-reverse md:flex-col w-full rounded-[var(--radius-large)] overflow-hidden relative",
+		className,
+	]}
+	style={style}
+>
+	<div
+		class:list={[
+			"min-w-0 pl-6 md:pl-9 pr-6 md:pr-2 pt-6 md:pt-7 pb-6 relative",
+			{
+				"w-full md:w-[calc(100%_-_3.25rem_-_0.75rem)]": !hasCover,
+				"w-full md:w-[calc(100%_-_var(--coverWidth)_-_0.75rem)]":
+					hasCover,
+			},
+		]}
+	>
+		<a
+			href={directory.url}
+			class="post-card-title transition group w-full min-w-0 block font-bold mb-3 pr-7 md:pr-0 text-2xl md:text-3xl leading-tight text-90 [overflow-wrap:anywhere]
+        hover:text-[var(--primary)] dark:hover:text-[var(--primary)]
+        active:text-[var(--title-active)] dark:active:text-[var(--title-active)]
+        before:w-1 before:h-5 before:rounded-md before:bg-[var(--primary)]
+        before:absolute
+        before:top-[2.1875rem] before:left-[1.125rem] before:hidden md:before:block"
+		>
+			{directory.name}
+			<Icon
+				class="inline text-[2rem] text-[var(--primary)] md:hidden translate-y-0.5 absolute right-0"
+				name="material-symbols:chevron-right-rounded"
+			/>
+			<Icon
+				class="text-[var(--primary)] text-[2rem] transition hidden md:inline absolute translate-y-0.5 opacity-0 group-hover:opacity-100 -translate-x-1 group-hover:translate-x-0"
+				name="material-symbols:chevron-right-rounded"
+			/>
+		</a>
+
+		<div
+			class="flex flex-wrap text-neutral-500 dark:text-neutral-400 items-center gap-4 gap-x-4 gap-y-2 mb-4"
+		>
+			<div class="flex items-center">
+				<div class="meta-icon">
+					<Icon
+						name="material-symbols:folder-outline-rounded"
+						class="text-xl"
+					/>
+				</div>
+				<span class="text-50 text-sm font-medium"
+					>{directory.count} 篇文章</span
+				>
+			</div>
+			<div class="flex items-center">
+				<div class="meta-icon">
+					<Icon
+						name="material-symbols:edit-calendar-outline-rounded"
+						class="text-xl"
+					/>
+				</div>
+				<span class="text-50 text-sm font-medium"
+					>{formatDateToYYYYMMDD(directory.firstDate)}</span
+				>
+			</div>
+		</div>
+
+		<div class="post-card-description description transition text-75 mb-3.5 pr-4">
+			最新更新：{formatDateToYYYYMMDD(directory.latestDate)} {latestPost.data.title}
+		</div>
+
+	</div>
+
+	{
+		hasCover && (
+			<a
+				href={directory.url}
+				aria-label={directory.name}
+				class:list={[
+					"group",
+					"post-card-cover",
+					"max-h-[20vh] md:max-h-none mx-4 mt-4 -mb-2 md:mb-0 md:mx-0 md:mt-0",
+					"md:w-[var(--coverWidth)] relative md:absolute md:top-3 md:bottom-3 md:right-3 rounded-xl overflow-hidden active:scale-95",
+				]}
+			>
+				<div class="absolute pointer-events-none z-10 w-full h-full group-hover:bg-black/30 group-active:bg-black/50 transition" />
+				<div class="absolute pointer-events-none z-20 w-full h-full flex items-center justify-center ">
+					<Icon
+						name="material-symbols:chevron-right-rounded"
+						class="transition opacity-0 group-hover:opacity-100 scale-50 group-hover:scale-100 text-white text-5xl"
+					/>
+				</div>
+				<ImageWrapper
+					src={directory.cover || ""}
+					basePath="/"
+					alt={`Cover image for ${directory.name}`}
+					class="post-card-cover-image w-full h-full"
+				/>
+			</a>
+		)
+	}
+
+	{
+		!hasCover && (
+			<a
+				href={directory.url}
+				aria-label={directory.name}
+				class="!hidden md:!flex btn-regular w-[3.25rem]
+         absolute right-3 top-3 bottom-3 rounded-xl bg-[var(--enter-btn-bg)]
+         hover:bg-[var(--enter-btn-bg-hover)] active:bg-[var(--enter-btn-bg-active)] active:scale-95
+        "
+			>
+				<Icon
+					name="material-symbols:chevron-right-rounded"
+					class="transition text-[var(--primary)] text-4xl mx-auto"
+				/>
+			</a>
+		)
+	}
+</div>
+<div
+	class="transition border-t-[1px] border-dashed mx-6 border-black/10 dark:border-white/[0.15] last:border-t-0 md:hidden"
+>
+</div>
+
+<style define:vars={{ coverWidth }}></style>

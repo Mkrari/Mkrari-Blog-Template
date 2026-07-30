@@ -1,0 +1,288 @@
+---
+import type { GetStaticPaths } from "astro";
+import Pagination from "@components/control/Pagination.astro";
+import PostPage from "@components/PostPage.astro";
+import Tags from "@components/widget/Tags.astro";
+import { PAGE_SIZE } from "@constants/constants";
+import MainGridLayout from "@layouts/MainGridLayout.astro";
+import { getSortedPosts } from "@utils/content-utils";
+import { initPostIdMap } from "@utils/permalink-utils";
+
+export const getStaticPaths = (async ({ paginate }) => {
+	const allBlogPosts = await getSortedPosts();
+	initPostIdMap(allBlogPosts);
+	return paginate(allBlogPosts, { pageSize: PAGE_SIZE });
+}) satisfies GetStaticPaths;
+
+const { page } = Astro.props;
+const len = page.data.length;
+const totalPosts = page.total;
+---
+
+<MainGridLayout title="全部" hideSidebars>
+	<div class="all-page-shell">
+		<aside class="all-directory-sidebar onload-animation" aria-label="文章目录">
+			<div class="all-directory-heading">
+				<span>QUICK ACCESS</span>
+				<h2>文章目录</h2>
+				<p>按主题快速打开对应的文章集合。</p>
+			</div>
+			<Tags class="all-directory-widget" />
+		</aside>
+
+		<main class="all-posts-page">
+			<header class="all-posts-hero onload-animation">
+				<div>
+					<span>ALL WRITINGS</span>
+					<h1>文章漫游</h1>
+					<p>从最新记录出发，翻阅技术、竞赛与生活留下的全部轨迹。</p>
+				</div>
+				<div class="all-posts-page-index">
+					<small>PAGE</small>
+					<strong>{String(page.currentPage).padStart(2, "0")}</strong>
+					<i>/ {String(page.lastPage).padStart(2, "0")}</i>
+				</div>
+				<div class="all-posts-total">{totalPosts} POSTS</div>
+			</header>
+
+			<PostPage page={page}></PostPage>
+			<Pagination
+				class="mx-auto onload-animation"
+				page={page}
+				style={`animation-delay: calc(var(--content-delay) + ${len * 50}ms)`}
+			></Pagination>
+		</main>
+	</div>
+</MainGridLayout>
+
+<style is:global>
+	.all-page-shell {
+		--all-border: color-mix(in oklch, var(--primary) 15%, transparent);
+		display: grid;
+		grid-template-columns: minmax(17.5rem, 0.34fr) minmax(0, 1fr);
+		align-items: start;
+		gap: 1rem;
+	}
+
+	.all-posts-page {
+		display: flex;
+		min-width: 0;
+		flex-direction: column;
+		gap: 1rem;
+	}
+
+	.all-directory-sidebar {
+		position: sticky;
+		top: 6rem;
+		overflow: hidden;
+		border: 1px solid var(--all-border);
+		border-radius: calc(var(--radius-large) + 0.25rem);
+		background: var(--card-bg);
+		box-shadow: 0 18px 46px rgba(47, 35, 86, 0.1);
+	}
+
+	.all-directory-heading {
+		padding: 1.5rem 1.35rem 1.15rem;
+		border-bottom: 1px dashed var(--all-border);
+		background:
+			radial-gradient(circle at 86% 12%, color-mix(in oklch, var(--primary) 18%, transparent), transparent 38%),
+			color-mix(in oklch, var(--card-bg) 95%, var(--primary) 5%);
+	}
+
+	.all-directory-heading span {
+		color: var(--primary);
+		font-size: 0.6rem;
+		font-weight: 900;
+		letter-spacing: 0.16em;
+	}
+
+	.all-directory-heading h2 {
+		margin: 0.2rem 0 0;
+		color: var(--deep-text);
+		font-size: 1.65rem;
+		font-weight: 900;
+	}
+
+	.all-directory-heading p {
+		margin: 0.45rem 0 0;
+		color: color-mix(in oklch, var(--deep-text) 48%, transparent);
+		font-size: 0.75rem;
+		line-height: 1.55;
+	}
+
+	.all-directory-sidebar widget-layout[data-id="tags"] {
+		border: 0 !important;
+		border-radius: 0 !important;
+		background: transparent !important;
+		box-shadow: none !important;
+	}
+
+	.all-posts-hero {
+		position: relative;
+		display: flex;
+		min-height: 14rem;
+		align-items: flex-end;
+		justify-content: space-between;
+		gap: 1.5rem;
+		padding: 2rem 2.2rem;
+		overflow: hidden;
+		border: 1px solid var(--all-border);
+		border-radius: calc(var(--radius-large) + 0.25rem);
+		background:
+			radial-gradient(circle at 88% 12%, color-mix(in oklch, var(--primary) 22%, transparent), transparent 38%),
+			var(--card-bg);
+		box-shadow: 0 18px 46px rgba(47, 35, 86, 0.1);
+	}
+
+	.all-posts-hero::after {
+		content: "";
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+		background-image: linear-gradient(90deg, color-mix(in oklch, var(--primary) 7%, transparent) 1px, transparent 1px);
+		background-size: 32px 100%;
+		mask-image: linear-gradient(90deg, black, transparent 75%);
+	}
+
+	.all-posts-hero > * {
+		position: relative;
+		z-index: 1;
+	}
+
+	.all-posts-hero span {
+		color: var(--primary);
+		font-size: 0.65rem;
+		font-weight: 900;
+		letter-spacing: 0.18em;
+	}
+
+	.all-posts-hero h1 {
+		margin: 0.22rem 0 0;
+		color: var(--deep-text);
+		font-size: clamp(2rem, 4vw, 3.15rem);
+		font-weight: 900;
+		letter-spacing: -0.05em;
+		line-height: 1;
+	}
+
+	.all-posts-hero p {
+		margin: 0.7rem 0 0;
+		color: color-mix(in oklch, var(--deep-text) 54%, transparent);
+		font-size: 0.82rem;
+		line-height: 1.55;
+	}
+
+	.all-posts-page-index {
+		display: grid;
+		grid-template-columns: auto auto;
+		align-items: baseline;
+		min-width: 5.7rem;
+	}
+
+	.all-posts-page-index small {
+		grid-column: 1 / -1;
+		color: color-mix(in oklch, var(--deep-text) 42%, transparent);
+		font-size: 0.55rem;
+		font-weight: 800;
+		letter-spacing: 0.16em;
+	}
+
+	.all-posts-page-index strong {
+		color: var(--primary);
+		font-size: 2.3rem;
+		line-height: 1;
+	}
+
+	.all-posts-page-index i {
+		color: color-mix(in oklch, var(--deep-text) 38%, transparent);
+		font-size: 0.72rem;
+		font-style: normal;
+	}
+
+	.all-posts-total {
+		position: absolute;
+		top: 1.35rem;
+		right: 1.7rem;
+		color: color-mix(in oklch, var(--deep-text) 36%, transparent);
+		font-size: 0.58rem;
+		font-weight: 800;
+		letter-spacing: 0.13em;
+	}
+
+	.all-posts-page #post-list-container {
+		gap: 0.85rem !important;
+		background: transparent !important;
+	}
+
+	.all-posts-page .blog-card {
+		--coverWidth: 35% !important;
+		min-height: 12.5rem;
+		border: 1px solid var(--all-border);
+		background: var(--card-bg) !important;
+		box-shadow: 0 14px 38px rgba(47, 35, 86, 0.08);
+		transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
+	}
+
+	.all-posts-page .blog-card:hover {
+		transform: translateY(-4px);
+		border-color: color-mix(in oklch, var(--primary) 42%, transparent);
+		box-shadow: 0 21px 50px rgba(47, 35, 86, 0.14);
+	}
+
+	.all-posts-page .post-card-cover {
+		border: 1px solid color-mix(in oklch, var(--primary) 10%, transparent);
+		background: color-mix(in oklch, var(--card-bg) 92%, var(--primary) 8%);
+	}
+
+	.all-posts-page .post-card-cover-image img {
+		transition: transform 500ms cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	.all-posts-page .blog-card:hover .post-card-cover-image img {
+		transform: scale(1.05);
+	}
+
+	body.wallpaper-transparent .all-posts-hero,
+	body.wallpaper-transparent .all-posts-page .blog-card,
+	body.wallpaper-transparent .all-directory-sidebar {
+		background: var(--card-bg) !important;
+		backdrop-filter: blur(18px);
+	}
+
+	@media (max-width: 900px) {
+		.all-page-shell {
+			grid-template-columns: 1fr;
+		}
+
+		.all-directory-sidebar {
+			display: none;
+		}
+	}
+
+	@media (max-width: 767px) {
+		.all-posts-hero {
+			min-height: 9.5rem;
+			align-items: flex-start;
+			padding: 1.35rem 1.2rem;
+		}
+
+		.all-posts-page-index {
+			position: absolute;
+			right: 1.15rem;
+			bottom: 1.25rem;
+		}
+
+		.all-posts-total {
+			top: 1.15rem;
+			right: 1.15rem;
+		}
+
+		.all-posts-hero p {
+			max-width: 68%;
+		}
+
+		.all-posts-page .blog-card {
+			min-height: 0;
+		}
+	}
+</style>

@@ -1,0 +1,44 @@
+---
+import ArchivePanel from "@components/ArchivePanel.svelte";
+import I18nKey from "@i18n/i18nKey";
+import { i18n } from "@i18n/translation";
+import MainGridLayout from "@layouts/MainGridLayout.astro";
+import { getSortedPostsList } from "@utils/content-utils";
+
+const posts = await getSortedPostsList();
+const tags = [...new Set(posts.flatMap((post) => post.data.tags))];
+const contentImages = import.meta.glob<{ default: ImageMetadata }>(
+	"/src/content/posts/**/*.{jpeg,jpg,png,gif,webp,avif}",
+	{ eager: true },
+);
+const contentImagesByPath = new Map(
+	Object.entries(contentImages).map(([path, module]) => [
+		path.toLocaleLowerCase(),
+		module.default.src,
+	]),
+);
+const postsWithCovers = posts.map((post) => {
+	const image = post.data.image?.trim();
+	if (!image) return { ...post, cover: "" };
+
+	if (image.startsWith("/") || image.startsWith("http") || image.startsWith("data:")) {
+		return { ...post, cover: image };
+	}
+
+	const imageName = image.replace(/^\.\//, "");
+	const key = `/src/content/posts/${post.id.replace(/\/index$/, "")}/${imageName}`;
+	return { ...post, cover: contentImagesByPath.get(key.toLocaleLowerCase()) ?? "" };
+});
+---
+
+<MainGridLayout title={i18n(I18nKey.archive)} hideSidebars>
+    <script>
+        import("../scripts/right-sidebar-layout.js");
+    </script>
+
+    <ArchivePanel
+        sortedPosts={postsWithCovers}
+        tags={tags}
+        client:only="svelte"
+    />
+</MainGridLayout>

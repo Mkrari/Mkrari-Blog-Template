@@ -1,0 +1,101 @@
+---
+import { commentConfig } from "@/config";
+
+interface Props {
+	path: string;
+}
+
+const config = {
+	...commentConfig.twikoo,
+	el: "#tcomment",
+	path: Astro.props.path,
+};
+const twikooVersion = "1.7.15";
+---
+
+<div id="tcomment" data-twikoo-version={twikooVersion}></div>
+<script is:inline define:vars={{ config }}>
+	(() => {
+		const root = document.getElementById("tcomment");
+		if (!root || root.dataset.loaderReady === "true") return;
+		root.dataset.loaderReady = "true";
+
+		const loadScriptOnce = (src, key) => {
+			const promiseKey = `__mkrari_${key}Promise`;
+			if (window[promiseKey]) return window[promiseKey];
+
+			window[promiseKey] = new Promise((resolve, reject) => {
+				const existing = document.querySelector(
+					`script[data-mkrari-script="${key}"]`,
+				);
+				if (existing) {
+					if (key === "twikoo" && window.twikoo) resolve();
+					else existing.addEventListener("load", resolve, { once: true });
+					return;
+				}
+
+				const script = document.createElement("script");
+				script.src = src;
+				script.defer = true;
+				script.dataset.mkrariScript = key;
+				script.addEventListener("load", resolve, { once: true });
+				script.addEventListener("error", reject, { once: true });
+				document.head.appendChild(script);
+			});
+			return window[promiseKey];
+		};
+
+		const currentPath = () => {
+			const pathname = window.location.pathname;
+			return pathname.endsWith("/") && pathname.length > 1
+				? pathname.slice(0, -1)
+				: pathname;
+		};
+
+		const initialize = async () => {
+			if (
+				!document.body.contains(root) ||
+				root.dataset.initializing === "true"
+			) {
+				return;
+			}
+			root.dataset.initializing = "true";
+
+			try {
+				await Promise.all([
+					loadScriptOnce("/scroll-protection.js", "scroll-protection"),
+					loadScriptOnce("/assets/js/twikoo.all.min.js", "twikoo"),
+				]);
+				if (!document.body.contains(root) || !window.twikoo) return;
+
+				root.innerHTML = "";
+				await window.twikoo.init({
+					...config,
+					path: currentPath(),
+					el: "#tcomment",
+				});
+				root.dataset.initialized = "true";
+			} catch (error) {
+				root.dataset.initializing = "false";
+				console.error("[Twikoo] Failed to load comments:", error);
+			}
+		};
+
+		if ("IntersectionObserver" in window) {
+			const observer = new IntersectionObserver(
+				(entries) => {
+					if (entries.some((entry) => entry.isIntersecting)) {
+						observer.disconnect();
+						initialize();
+					}
+				},
+				{ rootMargin: "600px 0px" },
+			);
+			observer.observe(root);
+		} else if ("requestIdleCallback" in window) {
+			requestIdleCallback(initialize, { timeout: 3000 });
+		} else {
+			setTimeout(initialize, 1200);
+		}
+	})();
+</script>

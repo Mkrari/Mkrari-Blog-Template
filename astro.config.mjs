@@ -44,7 +44,7 @@ export default defineConfig({
 			animationClass: "transition-swup-",
 			// Replace the complete page grid so page-specific sidebars and column
 			// layouts stay identical between client navigation and hard refreshes.
-			containers: ["#main-grid"],
+			containers: ["#page-shell"],
 			smoothScrolling: false, // 禁用平滑滚动以提升性能，避免与锚点导航冲突
 			cache: true,
 			// Avoid downloading pages and their assets before visitors request them.

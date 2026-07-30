@@ -889,6 +889,7 @@ const transparentClass = shouldEnableTransparency
 
 </div>
 
+<div id="page-shell">
 <!-- Main content -->
 <div class={`absolute w-full z-30 pointer-events-none ${mobileNonHomeBannerClass ? 'mobile-main-no-banner' : ''} ${transparentClass}`} style={`top: ${finalMainPanelTop}`}>
     <!-- The pointer-events-none here prevent blocking the click event of the TOC -->
@@ -967,8 +968,11 @@ const transparentClass = shouldEnableTransparency
     </div>
 )}
 
-<!-- 保留此元素以确保Swup正常工作 -->
-{(!siteConfig.toc.enable || isFloatTOC) && <div id="toc-container" class="hidden"></div>}
+<!-- 始终加载目录脚本，确保从普通页面首次进入文章时自定义元素已经注册。 -->
+{!(siteConfig.toc.enable && isSidebarTOC && isArticleLayout) && (
+    <div id="toc-container" class="hidden"><TOC headings={[]}></TOC></div>
+)}
+</div>
 </Layout>
 
 <style>
@@ -1145,7 +1149,7 @@ body.no-banner-mode .absolute.w-full.z-30 {
 /* TOC 垂直对齐优化 */
 body.no-banner-mode #toc-inner-wrapper {
     top: 5.5rem !important;
-    height: calc(100svh - 11.5rem) !important;
+    height: min(var(--toc-card-height, 20rem), calc(100svh - 11.5rem)) !important;
     max-height: calc(100svh - 11.5rem) !important;
 }
 
@@ -1158,9 +1162,9 @@ body:not(:has(#main-grid[data-page-kind="article"])) #toc-wrapper {
 }
 
 #toc-inner-wrapper {
-    height: calc(100svh - 11.5rem);
+    height: min(var(--toc-card-height, 20rem), calc(100svh - 11.5rem));
     max-height: calc(100svh - 11.5rem);
-    min-height: 20rem;
+    min-height: 0;
     padding: 0.45rem 0.35rem 0.45rem 0.45rem;
     border: 1px solid color-mix(in oklch, var(--primary) 12%, transparent);
     border-radius: calc(var(--radius-large) + 0.1rem);
@@ -1169,6 +1173,7 @@ body:not(:has(#main-grid[data-page-kind="article"])) #toc-wrapper {
         0 14px 34px rgba(35, 31, 56, 0.08),
         inset 0 1px 0 rgba(255, 255, 255, 0.34);
     isolation: isolate;
+    transition: height 180ms ease;
 }
 
 #toc-container {

@@ -26,6 +26,8 @@ import "../styles/fancybox-custom.css";
 import "../styles/expressive-code.css";
 import "../styles/panel-animations.css";
 import "../styles/aesthetic-polish.css";
+import "twikoo/dist/twikoo.css";
+import "../styles/twikoo.css";
 
 interface Props {
 	title?: string;
@@ -476,6 +478,7 @@ if (siteConfig.font) {
 <script>
 	// import { animationManager } from '../utils/animation-utils';
 	import "overlayscrollbars/overlayscrollbars.css";
+	import "../scripts/twikoo-loader";
 	// import {
 	//  OverlayScrollbars,
 	//  // ScrollbarsHidingPlugin,
@@ -1192,6 +1195,7 @@ function disableAnimation() {
 		);
 
 		window.swup.hooks.on("page:view", () => {
+			window.__mkrariMountTwikoo?.();
 			// hide the temp high element when the transition is done
 			const heightExtend = document.getElementById("page-height-extend");
 			if (heightExtend) {
@@ -1239,6 +1243,7 @@ function disableAnimation() {
 			// 检查当前页面是否为文章页面，如果是则触发自定义事件用于初始化评论系统
 			setTimeout(() => {
 				if (document.getElementById("tcomment")) {
+					window.__mkrariMountTwikoo?.();
 					// 触发自定义事件，通知评论系统页面已完全加载
 					const pageLoadedEvent = new CustomEvent(
 						"mizuki:page:loaded",
@@ -1295,10 +1300,6 @@ function disableAnimation() {
 		}
 	}
 
-	let backToTopBtn = document.getElementById("back-to-top-btn");
-	let toc = document.getElementById("toc-wrapper");
-	let navbar = document.getElementById("navbar-wrapper");
-
 	// 节流函数
 	function throttle(func: Function, limit: number) {
 		let inThrottle: boolean;
@@ -1316,6 +1317,11 @@ function disableAnimation() {
 	function scrollFunction() {
 		const scrollTop = document.documentElement.scrollTop;
 		const bannerHeight = window.innerHeight * (BANNER_HEIGHT / 100);
+		// #page-shell is replaced by Swup, so always resolve the current-page
+		// controls instead of retaining references to detached elements.
+		const backToTopBtn = document.getElementById("back-to-top-btn");
+		const toc = document.getElementById("toc-wrapper");
+		const navbar = document.getElementById("navbar-wrapper");
 		
 		// 尝试获取内容区域的起始位置
 		const contentWrapper = document.getElementById('content-wrapper');

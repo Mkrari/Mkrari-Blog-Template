@@ -51,6 +51,23 @@ class TableOfContents extends HTMLElement {
     active: boolean[] = [];
     activeIndicator: HTMLElement | null = null;
 
+    updateContainerSize = () => {
+        requestAnimationFrame(() => {
+            const wrapper = this.closest("#toc-inner-wrapper") as HTMLElement | null;
+            const tree = this.querySelector<HTMLElement>(".toc-tree");
+            if (!wrapper || !tree) return;
+
+            const desiredHeight = Math.max(88, tree.scrollHeight + 16);
+            wrapper.style.setProperty("--toc-card-height", `${desiredHeight}px`);
+            requestAnimationFrame(() => {
+                wrapper.classList.toggle(
+                    "toc-scrollable",
+                    tree.scrollHeight > this.clientHeight + 1,
+                );
+            });
+        });
+    };
+
     constructor() {
         super();
         this.observer = new IntersectionObserver(
@@ -184,6 +201,7 @@ class TableOfContents extends HTMLElement {
             const node = collapseButton.closest(".toc-node");
             const collapsed = node?.classList.toggle("is-collapsed") ?? false;
             collapseButton.setAttribute("aria-expanded", String(!collapsed));
+            this.updateContainerSize();
             return;
         }
 
@@ -253,9 +271,18 @@ class TableOfContents extends HTMLElement {
             tryInit();
             setTimeout(tryInit, 300);
         }
+        window.addEventListener("resize", this.updateContainerSize, { passive: true });
     };
 
     init() {
+        this.observer.disconnect();
+        this.tocEl?.removeEventListener("click", this.handleAnchorClick, true);
+        this.headingIdxMap.clear();
+        this.headings = [];
+        this.sections = [];
+        this.tocEntries = [];
+        this.active = [];
+
         // 重新生成TOC内容
         this.regenerateTOC();
 
@@ -293,6 +320,7 @@ class TableOfContents extends HTMLElement {
 
         this.fallback();
         this.update();
+        this.updateContainerSize();
     };
 
     regenerateTOC(retryCount = 0) {
@@ -306,7 +334,8 @@ class TableOfContents extends HTMLElement {
             return;
         }
         // 从当前页面重新获取标题
-        const headings = Array.from(document.querySelectorAll('h1, h2, h3, h4, h5, h6'))
+        const article = document.querySelector('#post-container');
+        const headings = Array.from(article?.querySelectorAll('h1, h2, h3, h4, h5, h6') ?? [])
             .filter(h => h.id)
             .map(h => ({
                 depth: parseInt(h.tagName.substring(1)),
@@ -412,6 +441,7 @@ class TableOfContents extends HTMLElement {
             <div style="opacity: 0" class="active-indicator -z-10 absolute left-0 right-0 rounded-xl transition-all"></div>
         `;
         this.dataset.loaded = "true";
+        this.updateContainerSize();
     }
 
     disconnectedCallback() {
@@ -419,7 +449,8 @@ class TableOfContents extends HTMLElement {
             this.observer.unobserve(section)
         );
         this.observer.disconnect();
-        this.tocEl?.removeEventListener("click", this.handleAnchorClick);
+        this.tocEl?.removeEventListener("click", this.handleAnchorClick, true);
+        window.removeEventListener("resize", this.updateContainerSize);
     };
 }
 
@@ -434,13 +465,17 @@ if (!customElements.get("table-of-contents")) {
       height: 100%;
       max-height: 100%;
       overflow-x: hidden;
-      overflow-y: auto;
+      overflow-y: hidden;
       position: relative;
       scroll-behavior: smooth;
       display: block;
       padding-right: 0.2rem;
       scrollbar-width: thin;
       scrollbar-color: color-mix(in oklch, var(--primary) 30%, transparent) transparent;
+  }
+
+  :global(#toc-inner-wrapper.toc-scrollable) table-of-contents.table-of-contents {
+      overflow-y: auto;
   }
 
   table-of-contents.table-of-contents::-webkit-scrollbar {

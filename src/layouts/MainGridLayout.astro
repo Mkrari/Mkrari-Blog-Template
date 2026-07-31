@@ -487,20 +487,56 @@ const transparentClass = shouldEnableTransparency
 		const currentIsHomePage =
 			window.location.pathname === '/' ||
 			window.location.pathname === '';
+		if (window.__homeBannerIntroCleanup) {
+			window.__homeBannerIntroCleanup();
+			window.__homeBannerIntroCleanup = null;
+		}
 		if (!currentIsHomePage) {
 			document.body.classList.remove('home-banner-intro', 'home-banner-leaving');
+			document.documentElement.classList.remove('home-intro-scroll-lock');
 			return;
 		}
 		if (sessionStorage.getItem('mizuki-home-intro-seen') === '1') {
 			document.body.classList.remove('home-banner-intro', 'home-banner-leaving');
+			document.documentElement.classList.remove('home-intro-scroll-lock');
 			return;
 		}
 		document.body.classList.add('home-banner-intro');
+		document.documentElement.classList.add('home-intro-scroll-lock');
 		const enterButton = document.getElementById('home-banner-enter');
-		if (!enterButton || enterButton.dataset.ready === 'true') return;
-		enterButton.dataset.ready = 'true';
+		if (!enterButton) {
+			document.documentElement.classList.remove('home-intro-scroll-lock');
+			return;
+		}
+		const mainContent = document.querySelector('.absolute.w-full.z-30.pointer-events-none');
+		let isFinishing = false;
+		let hasCompleted = false;
+		let wheelDelta = 0;
+		let wheelResetTimer;
+
+		const removeInputListeners = function() {
+			enterButton.removeEventListener('click', finishHomeIntro);
+			document.removeEventListener('wheel', handleWheel);
+			document.removeEventListener('touchstart', handleTouchStart);
+			document.removeEventListener('touchmove', handleTouchMove);
+			document.removeEventListener('touchend', handleTouchEnd);
+			document.removeEventListener('keydown', handleKeyDown);
+			if (wheelResetTimer) window.clearTimeout(wheelResetTimer);
+		};
+
+		const completeHomeIntro = function() {
+			if (hasCompleted) return;
+			hasCompleted = true;
+			document.body.classList.remove('home-banner-intro', 'home-banner-leaving');
+			document.documentElement.classList.remove('home-intro-scroll-lock');
+			applyWallpaperMode();
+			window.scrollTo({ top: 0, behavior: 'instant' });
+		};
+
 		const finishHomeIntro = function() {
-			if (!document.body.classList.contains('home-banner-intro')) return;
+			if (isFinishing || !document.body.classList.contains('home-banner-intro')) return;
+			isFinishing = true;
+			removeInputListeners();
 			sessionStorage.setItem('mizuki-home-intro-seen', '1');
 			localStorage.setItem('wallpaperMode', 'fullscreen');
 
@@ -508,17 +544,23 @@ const transparentClass = shouldEnableTransparency
 			if (fullscreenWallpaper) {
 				fullscreenWallpaper.style.display = 'block';
 			}
-			document.body.classList.add('home-banner-leaving', 'wallpaper-transparent', 'no-banner-mode');
-			document.body.classList.remove('enable-banner');
-			document.documentElement.classList.remove('home-intro-scroll-lock');
 
-			window.setTimeout(function() {
-				document.body.classList.remove('home-banner-intro', 'home-banner-leaving');
-				applyWallpaperMode();
-				window.scrollTo({ top: 0, behavior: 'instant' });
-			}, 850);
+			// 先让全屏壁纸完成一次绘制，再启动仅使用合成层的过渡。
+			requestAnimationFrame(function() {
+				requestAnimationFrame(function() {
+					document.body.classList.add('home-banner-leaving', 'wallpaper-transparent', 'no-banner-mode');
+					document.body.classList.remove('enable-banner');
+				});
+			});
+
+			if (mainContent) {
+				mainContent.addEventListener('transitionend', function(event) {
+					if (event.propertyName === 'transform') completeHomeIntro();
+				}, { once: true });
+			}
+			// transitionend 在后台标签页中可能不会触发，保留安全回退。
+			window.setTimeout(completeHomeIntro, 1000);
 		};
-		enterButton.addEventListener('click', finishHomeIntro);
 
 		let touchStartY = 0;
 		const handleTouchStart = function(event) {
@@ -526,14 +568,47 @@ const transparentClass = shouldEnableTransparency
 		};
 		const handleTouchMove = function(event) {
 			const currentY = event.touches[0]?.clientY || 0;
-			if (touchStartY - currentY > 28) {
+			const distance = touchStartY - currentY;
+			if (distance > 6 && event.cancelable) event.preventDefault();
+			if (distance > 28) {
 				finishHomeIntro();
-				document.removeEventListener('touchstart', handleTouchStart);
-				document.removeEventListener('touchmove', handleTouchMove);
 			}
 		};
+		const handleTouchEnd = function() {
+			touchStartY = 0;
+		};
+		const handleWheel = function(event) {
+			if (event.deltaY <= 0) {
+				wheelDelta = 0;
+				return;
+			}
+			if (event.cancelable) event.preventDefault();
+			const multiplier = event.deltaMode === 1
+				? 16
+				: (event.deltaMode === 2 ? window.innerHeight : 1);
+			wheelDelta += event.deltaY * multiplier;
+			if (wheelResetTimer) window.clearTimeout(wheelResetTimer);
+			wheelResetTimer = window.setTimeout(function() {
+				wheelDelta = 0;
+			}, 140);
+			if (wheelDelta > 18) finishHomeIntro();
+		};
+		const handleKeyDown = function(event) {
+			if (!['ArrowDown', 'PageDown', 'End', ' '].includes(event.key)) return;
+			const target = event.target;
+			if (target instanceof HTMLElement && target !== enterButton &&
+				(target.isContentEditable || /^(INPUT|TEXTAREA|SELECT|BUTTON|A)$/.test(target.tagName))) return;
+			event.preventDefault();
+			finishHomeIntro();
+		};
+
+		enterButton.addEventListener('click', finishHomeIntro);
 		document.addEventListener('touchstart', handleTouchStart, { passive: true });
-		document.addEventListener('touchmove', handleTouchMove, { passive: true });
+		document.addEventListener('touchmove', handleTouchMove, { passive: false });
+		document.addEventListener('touchend', handleTouchEnd, { passive: true });
+		document.addEventListener('wheel', handleWheel, { passive: false });
+		document.addEventListener('keydown', handleKeyDown);
+		window.__homeBannerIntroCleanup = removeInputListeners;
 	}
 
 	if (document.readyState === 'loading') {
@@ -1053,6 +1128,11 @@ const transparentClass = shouldEnableTransparency
     overflow-x: hidden;
 }
 
+:global(html.home-intro-scroll-lock) {
+    overflow: hidden;
+    overscroll-behavior: none;
+}
+
 :global(body.home-banner-intro) #banner-wrapper {
     position: absolute !important;
     top: 0 !important;
@@ -1096,8 +1176,11 @@ const transparentClass = shouldEnableTransparency
 }
 
 :global(body.home-banner-intro) .absolute.w-full.z-30.pointer-events-none {
-    top: 100vh !important;
-    transition: top 850ms cubic-bezier(0.22, 1, 0.36, 1);
+    top: 5.5rem !important;
+    transform: translate3d(0, calc(100vh - 5.5rem), 0);
+    transition: transform 820ms cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform;
+    backface-visibility: hidden;
 }
 
 :global(body.home-banner-leaving) #banner-wrapper {
@@ -1111,6 +1194,7 @@ const transparentClass = shouldEnableTransparency
 
 :global(body.home-banner-leaving) .absolute.w-full.z-30.pointer-events-none {
     top: 5.5rem !important;
+    transform: translate3d(0, 0, 0);
 }
 
 @media (max-width: 767px) {
@@ -1120,7 +1204,8 @@ const transparentClass = shouldEnableTransparency
     }
 
     :global(body.home-banner-intro) .absolute.w-full.z-30.pointer-events-none {
-        top: 100svh !important;
+        top: 5.5rem !important;
+        transform: translate3d(0, calc(100svh - 5.5rem), 0);
     }
 
     .home-banner-enter {
@@ -2053,8 +2138,9 @@ body.wallpaper-transparent #toc-inner-wrapper {
     }
 
     :global(html body.home-banner-intro) .absolute.w-full.z-30.pointer-events-none:not(.mobile-main-no-banner) {
-        top: 100svh !important;
+        top: 5.5rem !important;
         min-height: calc(100svh - 5.5rem) !important;
+        transform: translate3d(0, calc(100svh - 5.5rem), 0);
     }
 
     :global(html body.home-banner-intro.home-banner-leaving) #banner-wrapper {
@@ -2065,6 +2151,7 @@ body.wallpaper-transparent #toc-inner-wrapper {
 
     :global(html body.home-banner-intro.home-banner-leaving) .absolute.w-full.z-30.pointer-events-none {
         top: 5.5rem !important;
+        transform: translate3d(0, 0, 0);
     }
 
     :global(html body:not(.home-banner-intro)) #banner-wrapper.mobile-hide-banner {

@@ -3,7 +3,32 @@ allowBuilds:
   esbuild: true
   sharp: true
   swup: true
-  ttf2woff2: true
+overrides:
+  # @swup/plugin 3 ships build-only CLI tooling as runtime dependencies.
+  # This site consumes its prebuilt dist files and never invokes that CLI.
+  '@swup/plugin@3.0.1>microbundle': '-'
+  '@swup/plugin@3.0.1>shelljs': '-'
+  '@swup/plugin@3.0.1>shelljs-live': '-'
+  # Security floors for transitive build dependencies. Keep these until
+  # upstream packages declare equally new compatible ranges.
+  'astro-icon>@iconify/tools': 5.0.12
+  'astro>sharp': 0.35.3
+  'ajv@8': 8.18.0
+  'brace-expansion@2': 2.1.3
+  'fast-uri@3': 3.1.4
+  'fast-xml-builder@1': 1.1.7
+  'fast-xml-parser@5': 5.7.0
+  'glob@10': 10.5.0
+  'immutable@4': 4.3.9
+  'lodash@4': 4.18.1
+  'minimatch@9': 9.0.7
+  'picomatch@2': 2.3.2
+  'picomatch@4': 4.0.4
+  'postcss@8': 8.5.18
+  'rollup@2': 2.80.0
+  'smol-toml@1': 1.6.1
+  'svgo@4': 4.0.2
+  'yaml@2': 2.8.3
 minimumReleaseAgeExclude:
   - '@astrojs/compiler-binding-darwin-arm64@0.3.2'
   - '@astrojs/compiler-binding-darwin-x64@0.3.2'

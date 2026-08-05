@@ -54,7 +54,7 @@ async function getConfig() {
 						?.map((s) => s.replace(/["']/g, "")) || [];
 			}
 
-			if (enableCompress && localFonts.length > 0) {
+			if (localFonts.length > 0) {
 				fonts.push({
 					type: fontType,
 					files: localFonts,

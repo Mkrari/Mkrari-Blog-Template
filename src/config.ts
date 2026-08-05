@@ -190,7 +190,9 @@ export const siteConfig: SiteConfig = {
 			fontFamily: "WenJinMinchoP0-Regular",
 			fontWeight: "400",
 			localFonts: ["WenJinMinchoP0-Regular.ttf"],
-			enableCompress: true, // 启用字体子集优化，减少字体文件大小
+			// 评论等内容会在运行时动态插入，静态子集无法预知所有字形。
+			// 关闭子集化后构建脚本仍会转换为 WOFF2，但会保留完整字符集。
+			enableCompress: false,
 		},
 	},
 	showLastModified: false, // 控制“上次编辑”卡片显示的开关

@@ -39,7 +39,7 @@ pnpm install
 pnpm dev
 ```
 
-The development server is available at `http://localhost:4321/`.
+The development server is available at `http://localhost:4327/`.
 
 ```bash
 pnpm run check   # Astro and type checks

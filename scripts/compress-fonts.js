@@ -1,7 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import fontverter from "fontverter";
 import subsetFont from "subset-font";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -502,15 +501,13 @@ async function compressFonts() {
 					totalCompressedSize += originalSize;
 					// 不计入处理数量
 				} else if (ext === ".ttf" || ext === ".otf") {
-					const shouldSubset = fontConfig.enableCompress;
-					console.log(
-						`${shouldSubset ? "Subsetting" : "Converting full font"} ${fontFile}...`,
-					);
+					// TTF/OTF 需要压缩为 woff2
+					console.log(`Compressing ${fontFile}...`);
 
 					const fontBuffer = fs.readFileSync(fontSrc);
-					const compressedBuffer = shouldSubset
-						? await subsetFont(fontBuffer, text, { targetFormat: "woff2" })
-						: await fontverter.convert(fontBuffer, "woff2");
+					const compressedBuffer = await subsetFont(fontBuffer, text, {
+						targetFormat: "woff2",
+					});
 					const compressedFile = path.join(distFontDir, `${baseName}.woff2`);
 					fs.writeFileSync(compressedFile, compressedBuffer);
 

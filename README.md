@@ -39,7 +39,7 @@ pnpm install
 pnpm dev
 ```
 
-开发服务器默认运行在 `http://localhost:4321/`。
+开发服务器默认运行在 `http://localhost:4327/`。
 
 ```bash
 pnpm run check   # 类型与 Astro 检查

@@ -54,7 +54,8 @@ export const siteConfig: SiteConfig = {
 
 	// 页面自动缩放配置
 	pageScaling: {
-		enable: true, // 是否开启自动缩放
+		// 2026-10 阅读体验升级：关闭自动缩放，避免 1280~1920px 常见屏幕下字号被压缩到 85%
+		enable: false, // 是否开启自动缩放
 		targetWidth: 2000, // 目标宽度，低于此宽度时开始缩放
 	},
 
@@ -187,9 +188,12 @@ export const siteConfig: SiteConfig = {
 		},
 		cjkFont: {
 			// 中日韩字体 - 作为回退字体
-			fontFamily: "WenJinMinchoP0-Regular",
+			// 2026-10 阅读体验升级：改用系统无衬线中文字体（苹方 / 鸿蒙 / 微软雅黑 / 思源黑体），
+			// 屏幕显示更清晰，也省去约 8.9MB 的文津宋体下载。
+			// 如需恢复宋体：fontFamily 改回 "WenJinMinchoP0-Regular"，localFonts 改回 ["WenJinMinchoP0-Regular.ttf"]
+			fontFamily: "PingFang SC",
 			fontWeight: "400",
-			localFonts: ["WenJinMinchoP0-Regular.ttf"],
+			localFonts: [],
 			// 评论等内容会在运行时动态插入，静态子集无法预知所有字形。
 			// 关闭子集化后构建脚本仍会转换为 WOFF2，但会保留完整字符集。
 			enableCompress: false,

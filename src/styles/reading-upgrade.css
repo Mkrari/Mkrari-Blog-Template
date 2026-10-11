@@ -1,0 +1,576 @@
+/**
+ * reading-upgrade.css
+ * 阅读体验升级（2026-10）
+ *
+ * 设计目标：
+ *  1. 统一字体、字号、行高与行长，让长文阅读更轻松；
+ *  2. 文章页降低壁纸等装饰对正文的干扰（樱花保留，仅在系统开启“减少动态效果”时隐藏）；
+ *  3. 用一套清晰的移动端规则替代零散补丁，保证 375px 起的屏幕都不横向溢出。
+ *
+ * 说明：
+ *  - 本文件为纯 CSS（不使用 @apply），方便单独调试；
+ *  - Astro 打包后各 CSS 块的加载顺序不固定，因此选择器统一以 :root / #id 提升优先级，
+ *    仅在需要覆盖原有 !important 的地方才使用 !important。
+ */
+
+/* ============================================================
+ * 1. 设计令牌
+ * ============================================================ */
+:root {
+  --font-reading: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "HarmonyOS Sans SC", "MiSans",
+    "Hiragino Sans GB", "Microsoft YaHei UI", "Microsoft YaHei", "Noto Sans SC", "Source Han Sans SC", "Noto Sans CJK SC",
+    sans-serif;
+  --font-code: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas,
+    "Liberation Mono", monospace;
+
+  --reading-size: 1.0625rem; /* 17px */
+  --reading-leading: 1.85;
+  --reading-measure: 48rem; /* 约 44~46 个汉字 */
+
+  --reading-text: oklch(0.33 0.014 var(--hue));
+  --reading-heading: oklch(0.22 0.02 var(--hue));
+  --reading-muted: oklch(0.5 0.014 var(--hue));
+  --reading-rule: color-mix(in oklch, var(--primary) 14%, transparent);
+  --reading-soft-bg: color-mix(in oklch, var(--primary) 6%, transparent);
+  --reading-card-bg: color-mix(in oklch, var(--card-bg) 95%, transparent);
+
+  --tap-size: 44px;
+}
+
+:root.dark {
+  --reading-text: oklch(0.86 0.008 var(--hue));
+  --reading-heading: oklch(0.95 0.01 var(--hue));
+  --reading-muted: oklch(0.7 0.012 var(--hue));
+  --reading-rule: color-mix(in oklch, var(--primary) 20%, transparent);
+  --reading-soft-bg: color-mix(in oklch, var(--primary) 9%, transparent);
+  --reading-card-bg: color-mix(in oklch, var(--card-bg) 96%, transparent);
+}
+
+/* ============================================================
+ * 2. 全局文字渲染与对比度
+ * ============================================================ */
+:root body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* 次要文字原为 50% 不透明度，在半透明卡片上偏淡，略微加深 */
+:root .text-50 {
+  color: rgb(0 0 0 / 0.58);
+}
+:root.dark .text-50 {
+  color: rgb(255 255 255 / 0.58);
+}
+:root .post-reading-summary {
+  color: var(--reading-muted);
+}
+
+/* 暗色模式下压暗全屏壁纸，减少眩光 */
+:root.dark [data-fullscreen-wallpaper] {
+  filter: brightness(0.62) saturate(0.9);
+}
+
+/* 文章页弱化顶部白色渐变 */
+:root body:has(#main-grid[data-page-kind="article"]) .top-gradient-highlight {
+  opacity: 0.45;
+}
+
+/* ============================================================
+ * 3. 阅读进度条（仅文章页显示，元素见 Layout.astro）
+ * ============================================================ */
+#reading-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 60;
+  height: 3px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+#reading-progress.is-active {
+  opacity: 1;
+}
+#reading-progress > span {
+  display: block;
+  height: 100%;
+  width: 100%;
+  transform: scaleX(var(--reading-progress, 0));
+  transform-origin: left center;
+  background: linear-gradient(90deg, color-mix(in oklch, var(--primary) 70%, white 30%), var(--primary));
+  border-radius: 0 999px 999px 0;
+  will-change: transform;
+}
+
+/* ============================================================
+ * 4. 文章卡片：更实的背景 + 居中阅读栏
+ * ============================================================ */
+:root body.wallpaper-transparent #post-container,
+:root body #post-container {
+  background: var(--reading-card-bg) !important;
+  backdrop-filter: blur(20px) saturate(1.1) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(1.1) !important;
+}
+
+/* 用左右内边距把内容收窄到阅读宽度（百分比相对外层容器宽度），
+ * 卡片背景仍铺满，返回按钮仍贴在卡片右上角 */
+@media (min-width: 768px) {
+  :root #post-container {
+    padding-left: max(2.25rem, calc((100% - var(--reading-measure)) / 2)) !important;
+    padding-right: max(2.25rem, calc((100% - var(--reading-measure)) / 2)) !important;
+    padding-top: 2.25rem;
+    padding-bottom: 1.5rem;
+  }
+}
+
+/* 标题 */
+:root .post-article-title {
+  color: var(--reading-heading);
+  font-size: clamp(1.75rem, 1.2rem + 1.8vw, 2.4rem);
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  margin-bottom: 1rem;
+}
+/* 标题左侧装饰条在居中布局中会悬空，隐藏 */
+:root .post-article-title::before {
+  display: none !important;
+}
+
+/* 封面 */
+:root #post-cover {
+  border-radius: 1rem;
+  aspect-ratio: 16 / 9;
+  max-height: 26rem;
+}
+:root #post-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ============================================================
+ * 5. 正文排版（.custom-md 同时用于关于页、友链页）
+ * ============================================================ */
+:root .custom-md.prose {
+  --tw-prose-body: var(--reading-text);
+  --tw-prose-headings: var(--reading-heading);
+  --tw-prose-bold: var(--reading-heading);
+  --tw-prose-quotes: var(--reading-text);
+  --tw-prose-counters: var(--reading-muted);
+  --tw-prose-bullets: var(--primary);
+  --tw-prose-hr: var(--line-divider);
+  --tw-prose-th-borders: var(--line-divider);
+  --tw-prose-td-borders: var(--line-divider);
+  color: var(--reading-text);
+  font-family: var(--font-reading);
+  font-size: var(--reading-size);
+  line-height: var(--reading-leading);
+  letter-spacing: 0.01em;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+:root.dark .custom-md.prose {
+  --tw-prose-body: var(--reading-text);
+  --tw-prose-headings: var(--reading-heading);
+  --tw-prose-bold: var(--reading-heading);
+  --tw-prose-quotes: var(--reading-text);
+  --tw-prose-counters: var(--reading-muted);
+  color: var(--reading-text);
+}
+
+:root .post-article-card .custom-md.prose {
+  font-size: var(--reading-size);
+  line-height: var(--reading-leading);
+}
+
+/* 段落与列表节奏 */
+:root .custom-md.prose :where(p) {
+  margin-block: 0.95em;
+}
+:root .custom-md.prose :where(ul, ol) {
+  margin-block: 0.9em;
+  padding-inline-start: 1.5em;
+}
+:root .custom-md.prose :where(li) {
+  margin-block: 0.3em;
+}
+:root .custom-md.prose :where(li) > :where(p) {
+  margin-block: 0.4em;
+}
+:root .custom-md.prose strong {
+  color: var(--reading-heading);
+  font-weight: 650;
+}
+
+/* 标题层级
+ * 文章中常把 # 作为章标题、## 作为节标题，因此 h1 与 h2 都需要清晰但不过分夸张 */
+:root .custom-md.prose :where(h1, h2, h3, h4, h5, h6) {
+  color: var(--reading-heading);
+  font-family: var(--font-reading);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.4;
+  text-wrap: balance;
+}
+:root .custom-md.prose h1 {
+  position: relative;
+  font-size: 1.6em;
+  margin: 2.1em 0 0.85em;
+  padding: 0 0 0.45em 0.8em;
+  border-bottom: 1px solid var(--reading-rule);
+}
+:root .custom-md.prose h1::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.28em;
+  height: 1.05em;
+  width: 5px;
+  border-radius: 999px;
+  background: var(--primary);
+}
+:root .post-article-card .custom-md.prose h2,
+:root .custom-md.prose h2 {
+  position: relative;
+  font-size: 1.36em;
+  margin: 1.9em 0 0.75em;
+  padding: 0 0 0 0.75em;
+  border-bottom: 0;
+}
+:root .custom-md.prose h2::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.3em;
+  height: 0.95em;
+  width: 4px;
+  border-radius: 999px;
+  background: color-mix(in oklch, var(--primary) 55%, transparent);
+}
+:root .custom-md.prose h3 {
+  font-size: 1.18em;
+  margin: 1.6em 0 0.55em;
+}
+:root .custom-md.prose h4 {
+  font-size: 1.06em;
+  margin: 1.4em 0 0.5em;
+}
+:root .custom-md.prose :where(h5, h6) {
+  font-size: 1em;
+  margin: 1.4em 0 0.5em;
+  color: var(--reading-muted);
+}
+:root .custom-md.prose > :first-child {
+  margin-top: 0;
+}
+
+/* 链接：保留虚线下划线，提升可读性 */
+:root .custom-md.prose a:not(.no-styling) {
+  text-underline-offset: 0.25em;
+  overflow-wrap: anywhere;
+}
+
+/* 行内代码 */
+:root .custom-md.prose :not(pre) > code {
+  font-family: var(--font-code);
+  font-size: 0.86em;
+  font-weight: 500;
+  padding: 0.12em 0.4em;
+  border-radius: 0.4em;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* 引用 */
+:root .post-article-card .custom-md.prose blockquote,
+:root .custom-md.prose blockquote {
+  margin: 1.3em 0;
+  padding: 0.85em 1.15em 0.85em 1.25em;
+  border-radius: 0 0.85rem 0.85rem 0;
+  background: var(--reading-soft-bg);
+  color: var(--reading-text);
+  font-style: normal;
+}
+:root .custom-md.prose blockquote:not(.admonition)::before {
+  background: color-mix(in oklch, var(--primary) 55%, transparent) !important;
+}
+:root .custom-md.prose blockquote > :first-child {
+  margin-top: 0;
+}
+:root .custom-md.prose blockquote > :last-child {
+  margin-bottom: 0;
+}
+
+/* 分隔线 */
+:root .custom-md.prose hr {
+  margin: 2.4em auto;
+  width: 40%;
+  border-top: 1px dashed var(--reading-rule);
+}
+
+/* 图片：独占一段的图片居中显示；行内小图（徽章、图标）保持行内 */
+:root .custom-md.prose img {
+  max-width: 100%;
+  height: auto;
+}
+:root .custom-md.prose :is(p > img:only-child, p > a:only-child > img:only-child, .custom-md > img) {
+  display: block;
+  margin: 1.5em auto;
+}
+:root .custom-md.prose p:has(> img:only-child) {
+  margin-block: 0.5em;
+}
+
+/* 表格：允许换行，减少横向滚动 */
+:root .custom-md.prose .table-wrapper {
+  margin: 1.4em 0;
+  border-radius: 0.85rem;
+  border: 1px solid var(--line-divider);
+}
+:root .custom-md.prose table {
+  border: 0;
+  border-radius: 0;
+  font-size: 0.92em;
+  line-height: 1.6;
+}
+:root .custom-md.prose :is(th, td) {
+  padding: 0.6em 0.9em;
+  white-space: normal;
+  min-width: 4.5em;
+  vertical-align: top;
+}
+:root .custom-md.prose th {
+  white-space: nowrap;
+}
+:root .custom-md.prose tr:nth-child(even) {
+  background-color: color-mix(in oklch, var(--codeblock-bg) 70%, transparent);
+}
+
+/* 数学公式 */
+:root .custom-md.prose .katex {
+  font-size: 1.08em;
+}
+:root .custom-md.prose .katex-display {
+  margin: 1.2em 0;
+  padding: 0.35em 0.25em 0.5em;
+}
+
+/* Mermaid / iframe 等宽内容 */
+:root .custom-md.prose :is(.mermaid, pre.mermaid, .mermaid-container) {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+/* 代码块 */
+:root .custom-md.prose .expressive-code {
+  margin-block: 1.3em;
+}
+:root .custom-md .expressive-code pre > code {
+  font-size: 0.875rem;
+  line-height: 1.65;
+}
+:root .custom-md .expressive-code .frame {
+  border: 1px solid var(--line-divider);
+  border-radius: 0.8rem;
+}
+:root .custom-md .expressive-code .copy-btn {
+  opacity: 0.55;
+}
+:root .custom-md .expressive-code .frame:hover .copy-btn,
+:root .custom-md .expressive-code .copy-btn:focus-visible {
+  opacity: 1;
+}
+
+/* 提示块（admonition） */
+:root .custom-md.prose blockquote.admonition {
+  padding: 1em 1.2em;
+}
+
+/* 分享 / 许可证区块与正文保持同一阅读宽度节奏 */
+:root #share-component,
+:root .license-container {
+  border-radius: 1rem;
+}
+
+/* ============================================================
+ * 6. 文章列表卡片（/all/、分类页）
+ * ============================================================ */
+:root .post-card-description {
+  color: color-mix(in oklch, var(--deep-text) 70%, transparent);
+  font-size: 0.95rem;
+}
+:root .post-card-title {
+  line-height: 1.3;
+}
+
+/* ============================================================
+ * 7. 平板 / 小桌面
+ * ============================================================ */
+@media (min-width: 768px) and (max-width: 1279px) {
+  :root {
+    --reading-size: 1.0625rem;
+  }
+}
+
+/* 侧栏目录宽度 = (100vw - 90rem) / 2，关闭页面缩放后，
+ * 1860px 以下的屏幕放不下侧栏目录，改用导航栏中的目录按钮（与平板一致） */
+@media (min-width: 1280px) and (max-width: 1859px) {
+  :root #toc-wrapper {
+    display: none !important;
+  }
+  :root body:has(#main-grid[data-page-kind="article"]) #navbar #mobile-toc-switch {
+    display: flex !important;
+  }
+}
+
+/* ============================================================
+ * 8. 手机（< 768px）
+ * ============================================================ */
+@media (max-width: 767px) {
+  :root {
+    /* 移动端根字号为 14px，正文使用固定 16px 保证可读 */
+    --reading-size: 16px;
+    --reading-leading: 1.8;
+  }
+
+  :root #post-container {
+    padding-left: 1.15rem !important;
+    padding-right: 1.15rem !important;
+    padding-top: 1.25rem;
+  }
+
+  :root .post-article-title {
+    font-size: 1.6rem;
+    line-height: 1.3;
+  }
+
+  :root #post-cover {
+    border-radius: 0.85rem;
+    margin-bottom: 1.5rem;
+  }
+
+  :root .custom-md.prose h1 {
+    font-size: 1.42em;
+    margin-top: 1.9em;
+  }
+  :root .custom-md.prose h2 {
+    font-size: 1.24em;
+    margin-top: 1.7em;
+  }
+  :root .custom-md.prose h3 {
+    font-size: 1.12em;
+  }
+
+  /* 代码块：减小内边距，字号 13px */
+  :root .custom-md .expressive-code pre > code {
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  :root .custom-md .expressive-code .frame {
+    border-radius: 0.7rem;
+  }
+  :root .custom-md .expressive-code .copy-btn {
+    opacity: 0.85;
+  }
+
+  /* 表格与公式贴边滚动，避免被卡片内边距挤压 */
+  :root .custom-md.prose .table-wrapper {
+    font-size: 0.95em;
+  }
+  :root .custom-md.prose :is(th, td) {
+    padding: 0.5em 0.7em;
+  }
+
+  :root .custom-md.prose blockquote {
+    padding: 0.75em 0.95em;
+  }
+
+  /* 文章列表：卡片间距更舒展，封面改为 16:9 */
+  :root #post-list-container {
+    gap: 0.875rem !important;
+  }
+  :root #post-list-container .post-card-item {
+    padding: 0.75rem !important;
+  }
+  :root #post-list-container .post-card-item > div:first-child {
+    padding: 0.85rem 0.35rem 0.35rem !important;
+  }
+  :root #post-list-container .post-card-cover {
+    max-height: none !important;
+    aspect-ratio: 16 / 9;
+    margin: 0 !important;
+    border-radius: 0.85rem;
+  }
+  :root #post-list-container .post-card-title {
+    font-size: 1.3rem;
+    margin-bottom: 0.6rem;
+  }
+  :root #post-list-container .post-card-description {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+    margin-bottom: 0;
+    font-size: 0.95rem;
+    line-height: 1.65;
+  }
+
+  /* 移动端也提供返回顶部按钮，避开底部安全区 */
+  :root .back-to-top-wrapper {
+    display: block !important;
+  }
+  :root #back-to-top-btn {
+    right: 6rem;
+    bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
+    border-radius: 999px;
+    box-shadow: 0 8px 24px rgba(30, 24, 44, 0.16);
+  }
+  :root #back-to-top-btn button {
+    width: 46px !important;
+    height: 46px !important;
+    border-radius: 999px;
+    font-size: 1.6rem;
+  }
+}
+
+/* ============================================================
+ * 9. 减少动态效果偏好
+ * ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  #reading-progress > span {
+    transition: none;
+  }
+  #canvas_sakura {
+    display: none !important;
+  }
+}
+
+/* ============================================================
+ * 10. 打印
+ * ============================================================ */
+@media print {
+  :root,
+  :root.dark {
+    --reading-text: #222;
+    --reading-heading: #111;
+    --reading-muted: #555;
+    --reading-rule: #ccc;
+    --reading-soft-bg: #f5f5f5;
+  }
+
+  #reading-progress,
+  #canvas_sakura,
+  [data-fullscreen-wallpaper],
+  #navbar,
+  .back-to-top-wrapper {
+    display: none !important;
+  }
+  :root #post-container {
+    background: white !important;
+    backdrop-filter: none !important;
+  }
+}

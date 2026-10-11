@@ -41,3 +41,8 @@ cache/
 fuwari/
 src/data/myself.ts
 src/pages/myself.astro
+
+# Local agent instructions and browser profiles
+AGENTS.md
+.edge-codex/
+.codex-*.log

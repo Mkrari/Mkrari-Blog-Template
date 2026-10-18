@@ -188,3 +188,40 @@ Make the emoji component display correctly when there are too many emoji packs
   position: relative;
   z-index: 100;
 }
+
+/* 按完整评论条数折叠，取消 Twikoo 的固定高度裁剪。 */
+[data-twikoo-root] .tk-content,
+[data-twikoo-root] .tk-replies {
+  max-height: none;
+  overflow: visible;
+}
+
+/* 评论内部的旧展开按钮用于高度折叠；保留主列表的加载更多按钮。 */
+[data-twikoo-root] .tk-comment .tk-expand-wrap,
+[data-twikoo-root] .tk-comment .tk-collapse-wrap,
+[data-twikoo-root] .tk-comment[data-comment-folded] {
+  display: none !important;
+}
+
+[data-twikoo-root] .comment-fold-toggle {
+  display: block;
+  min-height: 2.75rem;
+  margin: 1rem auto 0;
+  padding: 0.55rem 1.15rem;
+  border: 1px solid color-mix(in oklch, var(--primary) 24%, transparent);
+  border-radius: 0.75rem;
+  background: var(--btn-regular-bg);
+  color: var(--btn-content);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+[data-twikoo-root] .comment-fold-toggle:hover {
+  background: var(--btn-regular-bg-hover);
+}
+
+[data-twikoo-root] .comment-fold-toggle:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+}

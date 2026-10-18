@@ -1,3 +1,5 @@
+import { setupCommentFolding } from "./comment-folding";
+
 type TwikooRoot = HTMLElement & {
 	dataset: DOMStringMap & {
 		envId?: string;
@@ -6,6 +8,8 @@ type TwikooRoot = HTMLElement & {
 		twikooState?: string;
 	};
 };
+
+const commentFoldingControllers = new Map<HTMLElement, () => void>();
 
 declare global {
 	interface Window {
@@ -67,13 +71,19 @@ const initialiseTwikoo = async (root: TwikooRoot) => {
 		]);
 		if (!document.body.contains(root) || !window.twikoo) return;
 
-		root.replaceChildren();
+		// Vue replaces its mount element. Keep our configuration and lifecycle
+		// root outside that element so folding survives Twikoo's first render.
+		const mount = document.createElement("div");
+		root.replaceChildren(mount);
 		await window.twikoo.init({
-			el: root,
+			el: mount,
 			envId: root.dataset.envId,
 			lang: root.dataset.lang,
 			path: root.dataset.path || window.location.pathname,
 		});
+		if (!document.body.contains(root)) return;
+		commentFoldingControllers.get(root)?.();
+		commentFoldingControllers.set(root, setupCommentFolding(root));
 		root.dataset.twikooState = "ready";
 	} catch (error) {
 		root.dataset.twikooState = "error";
@@ -83,22 +93,36 @@ const initialiseTwikoo = async (root: TwikooRoot) => {
 
 const mountTwikoo = () => {
 	window.__mkrariTwikooObserver?.disconnect();
-	const root = document.querySelector<TwikooRoot>("[data-twikoo-root]");
-	if (!root || root.dataset.twikooState === "ready") return;
+	for (const [root, cleanup] of commentFoldingControllers) {
+		if (!document.body.contains(root)) {
+			cleanup();
+			commentFoldingControllers.delete(root);
+		}
+	}
+	const allRoots = Array.from(document.querySelectorAll<TwikooRoot>("[data-twikoo-root]"));
+	for (const root of allRoots) {
+		if (root.dataset.twikooState === "ready" && !commentFoldingControllers.has(root)) {
+			commentFoldingControllers.set(root, setupCommentFolding(root));
+		}
+	}
+	const roots = allRoots.filter((root) => root.dataset.twikooState !== "ready");
+	if (!roots.length) return;
 
 	if (!("IntersectionObserver" in window)) {
-		void initialiseTwikoo(root);
+		for (const root of roots) void initialiseTwikoo(root);
 		return;
 	}
 
 	const observer = new IntersectionObserver((entries) => {
-		if (entries.some((entry) => entry.isIntersecting)) {
-			observer.disconnect();
-			void initialiseTwikoo(root);
+		for (const entry of entries) {
+			if (entry.isIntersecting) {
+				observer.unobserve(entry.target);
+				void initialiseTwikoo(entry.target as TwikooRoot);
+			}
 		}
 	}, { rootMargin: "600px 0px" });
 	window.__mkrariTwikooObserver = observer;
-	observer.observe(root);
+	for (const root of roots) observer.observe(root);
 };
 
 window.__mkrariMountTwikoo = mountTwikoo;

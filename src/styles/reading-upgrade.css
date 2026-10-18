@@ -377,12 +377,21 @@
   border: 1px solid var(--line-divider);
   border-radius: 0.8rem;
 }
-:root .custom-md .expressive-code .copy-btn {
-  opacity: 0.55;
-}
+/* 保留默认的隐藏状态，避免复制按钮与语言标签同时显示。 */
 :root .custom-md .expressive-code .frame:hover .copy-btn,
-:root .custom-md .expressive-code .copy-btn:focus-visible {
+:root .custom-md .expressive-code .frame:focus-within .copy-btn {
   opacity: 1;
+}
+
+:root .custom-md .expressive-code .frame[data-language]:focus-within::after {
+  opacity: 0;
+}
+
+/* 触屏设备没有悬停状态，始终提供复制入口；语言标签在此模式下隐藏。 */
+@media (hover: none) {
+  :root .custom-md .expressive-code .copy-btn {
+    opacity: 1;
+  }
 }
 
 /* 提示块（admonition） */
@@ -473,10 +482,6 @@
   :root .custom-md .expressive-code .frame {
     border-radius: 0.7rem;
   }
-  :root .custom-md .expressive-code .copy-btn {
-    opacity: 0.85;
-  }
-
   /* 表格与公式贴边滚动，避免被卡片内边距挤压 */
   :root .custom-md.prose .table-wrapper {
     font-size: 0.95em;

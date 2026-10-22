@@ -52,7 +52,7 @@
 		"dayjs": "^1.11.19",
 		"hastscript": "^9.0.1",
 		"katex": "^0.16.28",
-		"markdown-it": "^14.3.0",
+		"markdown-it": "^14.3.3",
 		"marked": "^16.4.2",
 		"node-html-parser": "^7.0.2",
 		"overlayscrollbars": "^2.14.0",
